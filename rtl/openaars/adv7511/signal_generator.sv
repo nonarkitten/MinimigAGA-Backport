@@ -22,6 +22,7 @@
 
 module signal_generator(
     input clk,
+    input reset,
 
     input [7:0] i_r,        // Input RGB
     input [7:0] i_g,
@@ -97,12 +98,16 @@ module signal_generator(
     // Clock devider block
     reg [1:0] r_dev_cnt = 0;
     always @(posedge clk) begin
-      r_dev_cnt <= r_dev_cnt + 1;
-      
-      r_vid_enable <= 1'b0;
-      r_clock_dev <= r_dev_cnt[1];
-      if (r_dev_cnt == 2'b00) begin
+      if(reset) begin
+        r_dev_cnt = 0;
+      end else begin
+        r_dev_cnt <= r_dev_cnt + 1;
+
+        r_vid_enable <= 1'b0;
+        r_clock_dev <= r_dev_cnt[1];
+        if (r_dev_cnt == 2'b00) begin
           r_vid_enable <= 1'b1;
+        end
       end
 
       // r_clock_dev <= 1'b0;
@@ -132,86 +137,96 @@ module signal_generator(
     // Vertical order   : Active region | Front Porch | Sync       | Back Porge
     
     always @(posedge clk) begin
+      if (reset) begin
+        hz_count <= 0;
+        vt_count <= 0;
+        vt_count_enable <= 0;
+        r_frame <= 0;
+        r_frame_end <= 0;
+        hz_region_act <= 0;
+        vt_region_act <= 0;
+      end else begin 
 
-      // Set defaults
-      r_frame <= 1'b0;
+        // Set defaults
+        r_frame <= 1'b0;
 
-      // Only connect act when the enable is high
-      if(r_vid_enable == 1'b1) begin
-        // Handle horizontal counter
-        //vt_count_enable = 1'b0;
-        
-        // Next position
-        hz_count <= hz_count + 1;
-        // When reaching the end of the line
-        if(hz_count == (HZ_TOTAL)) begin 
-          hz_count <= 0;
-          vt_count_enable = 1'b1;
-        end
-      end
+        // Only connect act when the enable is high
+        if(r_vid_enable == 1'b1) begin
+          // Handle horizontal counter
+          //vt_count_enable = 1'b0;
 
-      // Simple implementation to sync the frame to the pal signal
-      if(i_frame_end) begin
-          r_frame_end <= 1'b1;
-      end
-
-      // Act when verticle line changes
-      if(vt_count_enable == 1'b1) begin
-        vt_count_enable = 1'b0;
-        // Next line
-        vt_count <= vt_count + 1;
-        // Return when we reach the END of the FRAME
-        //if(vt_count == (VT_TOTAL - 32 + {4'b0, i_vblank_width})) begin
-        if(vt_count == VT_TOTAL || r_frame_end) begin
-          r_frame_end <= 1'b0;
-          vt_count <= 0;
-          r_frame <= 1'b1;
-        end
-      end
-
-      // HORIZONTAL
-      
-      // Set Horizontal active region
-      hz_region_act <= 1'b0;
-      r_x <= 0;
-      if (hz_count > (HZ_TOTAL - HZ_ACT_PIX) & (vt_count < VT_ACT_LN)) begin
-        hz_region_act <= 1'b1;
-        r_x <= hz_count - (HZ_FRONT_PORCH + HZ_SYNC_WIDTH + HZ_BACK_PORCH);
-      end
-      
-      // Sync
-      r_hsync <= !SYNC_POL;
-      if (hz_count >= HZ_FRONT_PORCH & hz_count < (HZ_FRONT_PORCH + HZ_SYNC_WIDTH)) begin
-      //if (hz_count >= HZ_FRONT_PORCH & hz_count < (HZ_FRONT_PORCH + {4'b0, i_vblank_width})) begin
-        r_hsync <= SYNC_POL;
-          // Vertical sync
-          r_vsync <= !SYNC_POL;
-          if ((vt_count > (VT_ACT_LN + VT_FRONT_PORCH)) & (vt_count < (VT_ACT_LN + VT_FRONT_PORCH + VT_SYNC_WIDTH))) begin
-            r_vsync <= SYNC_POL;
+          // Next position
+          hz_count <= hz_count + 1;
+          // When reaching the end of the line
+          if(hz_count == (HZ_TOTAL)) begin 
+            hz_count <= 0;
+            vt_count_enable = 1'b1;
           end
-      end
+        end
 
-      // VERTICAL
+        // Simple implementation to sync the frame to the pal signal
+        if(i_frame_end) begin
+          r_frame_end <= 1'b1;
+        end
 
-      // Set Vertical active region
-      vt_region_act <= 1'b0;
-      r_y <= 0;
-      if (vt_count < (VT_ACT_LN)) begin
-        vt_region_act <= 1'b1;
-        r_y <= {1'b0, vt_count};
-      end
-      
+        // Act when verticle line changes
+        if(vt_count_enable == 1'b1) begin
+          vt_count_enable = 1'b0;
+          // Next line
+          vt_count <= vt_count + 1;
+          // Return when we reach the END of the FRAME
+          //if(vt_count == (VT_TOTAL - 32 + {4'b0, i_vblank_width})) begin
+            if(vt_count == VT_TOTAL || r_frame_end) begin
+              r_frame_end <= 1'b0;
+              vt_count <= 0;
+              r_frame <= 1'b1;
+            end
+          end
 
-      
-      // Pass data through to the output
-      r_r <= 8'b00;
-      r_g <= 8'b00;
-      r_b <= 8'b00;
-      if (vt_region_act == 1'b1 & hz_region_act == 1'b1) begin
-        r_r <= i_r;
-        r_g <= i_g;
-        r_b <= i_b;
-      end
+          // HORIZONTAL
+
+          // Set Horizontal active region
+          hz_region_act <= 1'b0;
+          r_x <= 0;
+          if (hz_count > (HZ_TOTAL - HZ_ACT_PIX) & (vt_count < VT_ACT_LN)) begin
+            hz_region_act <= 1'b1;
+            r_x <= hz_count - (HZ_FRONT_PORCH + HZ_SYNC_WIDTH + HZ_BACK_PORCH);
+          end
+
+          // Sync
+          r_hsync <= !SYNC_POL;
+          if (hz_count >= HZ_FRONT_PORCH & hz_count < (HZ_FRONT_PORCH + HZ_SYNC_WIDTH)) begin
+            //if (hz_count >= HZ_FRONT_PORCH & hz_count < (HZ_FRONT_PORCH + {4'b0, i_vblank_width})) begin
+              r_hsync <= SYNC_POL;
+              // Vertical sync
+              r_vsync <= !SYNC_POL;
+              if ((vt_count > (VT_ACT_LN + VT_FRONT_PORCH)) & (vt_count < (VT_ACT_LN + VT_FRONT_PORCH + VT_SYNC_WIDTH))) begin
+                r_vsync <= SYNC_POL;
+              end
+            end
+
+            // VERTICAL
+
+            // Set Vertical active region
+            vt_region_act <= 1'b0;
+            r_y <= 0;
+            if (vt_count < (VT_ACT_LN)) begin
+              vt_region_act <= 1'b1;
+              r_y <= {1'b0, vt_count};
+            end
+
+
+
+            // Pass data through to the output
+            r_r <= 8'b00;
+            r_g <= 8'b00;
+            r_b <= 8'b00;
+            if (vt_region_act == 1'b1 & hz_region_act == 1'b1) begin
+              r_r <= i_r;
+              r_g <= i_g;
+              r_b <= i_b;
+            end
+          end
 
     end
     

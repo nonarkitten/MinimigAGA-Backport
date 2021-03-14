@@ -22,8 +22,12 @@ Port
   out_valid : out   STD_LOGIC;
   out_addr  : out   STD_LOGIC_VECTOR(7 downto 0);
   out_value : out   STD_LOGIC_VECTOR(7 downto 0);
-  sioc      : inout STD_LOGIC;
-  siod      : inout STD_LOGIC
+  scl_i     : in    STD_LOGIC;
+  scl_t     : out   STD_LOGIC;
+  scl_o     : out   STD_LOGIC;
+  sda_i     : in    STD_LOGIC;
+  sda_t     : out   STD_LOGIC;
+  sda_o     : out   STD_LOGIC
 );
 end i2c_sender;
 
@@ -57,12 +61,12 @@ architecture behave of work.i2c_sender is
    signal r_busy : std_logic;
 
    -- Tristate
-   signal scl_i : std_logic;
-   signal scl_o : std_logic;
-   signal scl_t : std_logic;
-   signal sda_i : std_logic;
-   signal sda_o : std_logic;
-   signal sda_t : std_logic;
+   -- signal scl_i : std_logic;
+   -- signal scl_o : std_logic;
+   -- signal scl_t : std_logic;
+   -- signal sda_i : std_logic;
+   -- signal sda_o : std_logic;
+   -- signal sda_t : std_logic;
 
    -- State machine states
    type State_type is (
@@ -221,11 +225,6 @@ begin
        stop_on_idle => bit_0
    );
 
-   -- I2C output
-   scl_i <= sioc;
-   sioc <= scl_o when (scl_t = '0') else 'Z';
-   sda_i <= siod;
-   siod <= sda_o when (sda_t = '0') else 'Z';
 
    registers: process(clk)
    begin

@@ -10,6 +10,7 @@ module adv_ddr
 	// INPUT
 	input clk_ddr,			// DDR clock at 4xpixel clock
 	input clk_pixel,        // Pixel clock
+	input reset,
 	
 	input de_in,		// Used to generate DE
 	input vsync, hsync,     // 
@@ -53,35 +54,41 @@ end
 reg clk_pixel_prev = 0;
 reg [1:0] phase_count = 0;
 always @(posedge clk_ddr) begin
-	clk_pixel_prev <= clk_pixel__;
-
-	// Next phase
-	phase_count <= phase_count + 1; 
-
-	// Handle positive pixel clock edge
-	if (!clk_pixel_prev && clk_pixel__) begin
+	if (reset) begin
+		clk_pixel_prev <= 0;
 		phase_count <= 0;
+	end else begin
+
+		clk_pixel_prev <= clk_pixel__;
+
+		// Next phase
+		phase_count <= phase_count + 1; 
+
+		// Handle positive pixel clock edge
+		if (!clk_pixel_prev && clk_pixel__) begin
+			phase_count <= 0;
+		end
+
+		// Do actions according to phases
+		case (phase_count)
+			2'b00: begin
+				// Output the lower (1st) part
+				data_out <= data__[11:0];
+				// Output vsync and hsync as well
+				vsync_out <= vsync__;
+				hsync_out <= hsync__;
+				// Generate data enable
+				de_out <= de_in__;
+			end
+			2'b10: begin
+				// Output the high (2nd) part
+				data_out <= data__[23:12];
+			end
+		endcase
+
+		// Output synchronized pixel clock 
+		clk_pixel_out <= clk_pixel__;
 	end
-
-	// Do actions according to phases
-	case (phase_count)
-		2'b00: begin
-			// Output the lower (1st) part
-			data_out <= data__[11:0];
-			// Output vsync and hsync as well
-			vsync_out <= vsync__;
-			hsync_out <= hsync__;
-			// Generate data enable
-			de_out <= de_in__;
-		end
-		2'b10: begin
-			// Output the high (2nd) part
-			data_out <= data__[23:12];
-		end
-	endcase
-
-	// Output synchronized pixel clock 
-	clk_pixel_out <= clk_pixel__;
 end
 
 endmodule
