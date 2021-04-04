@@ -14,6 +14,7 @@
 //#define FPGA2 AT91C_PIO_PA15
 //#define BUTTON AT91C_PIO_PA28
 
+#include "i2c.h"
 #include "spi.h"
 #include "uart.h"
 
@@ -114,5 +115,3 @@ unsigned long CheckTimer(unsigned long t);
 void WaitTimer(unsigned long time);
 void ConfigMisc(unsigned short misc);
 void Reconfigure();
-
-

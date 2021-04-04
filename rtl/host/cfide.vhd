@@ -149,7 +149,18 @@ signal spirtcpresent : std_logic;
 signal reset : std_logic;
 
 
--- attribute MARK_DEBUG : string;
+attribute MARK_DEBUG : string;
+attribute MARK_DEBUG of i2c_select : signal is "TRUE";
+attribute MARK_DEBUG of I2Cdata : signal is "TRUE";
+attribute MARK_DEBUG of d : signal is "TRUE";
+attribute MARK_DEBUG of scl_i : signal is "TRUE";
+attribute MARK_DEBUG of scl_o : signal is "TRUE";
+attribute MARK_DEBUG of scl_t : signal is "TRUE";
+attribute MARK_DEBUG of sda_i : signal is "TRUE";
+attribute MARK_DEBUG of sda_o : signal is "TRUE";
+attribute MARK_DEBUG of sda_t : signal is "TRUE";
+attribute MARK_DEBUG of addr : signal is "TRUE";
+
 -- attribute MARK_DEBUG of addr : signal is "TRUE";
 -- attribute MARK_DEBUG of wr : signal is "TRUE";
 -- attribute MARK_DEBUG of d : signal is "TRUE";
@@ -544,7 +555,7 @@ my_i2c_mmio: entity work.i2c_master_mmio port map (
     -- MMIO interface
     addr => addr,
     i2c_select => i2c_select,
-		interrupt_select => interrupt_select,
+	interrupt_select => interrupt_select,
     req => req,
     wr => wr,
 

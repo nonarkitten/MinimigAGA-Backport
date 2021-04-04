@@ -264,8 +264,8 @@ unsigned char LoadConfiguration(char *filename)
 	ChangeDirectory(0); // Config files always live in the root directory
     if (FileOpen(&file, filename))
     {
-		configTYPE *tmpconf=(configTYPE *)&sector_buffer;
-		BootPrint("Opened configuration file\n");
+      configTYPE *tmpconf=(configTYPE *)&sector_buffer;
+      BootPrint("Opened configuration file\n");
         printf("Configuration file size: %lu\r", file.size);
         if (file.size <= sizeof(config))
         {
@@ -346,6 +346,7 @@ unsigned char LoadConfiguration(char *filename)
 		config.hardfile[1].long_name[0]=0;
 		config.hardfile[1].enabled = 2;	// Default is access to entire SD card
 		updatekickstart=true;
+    config.audio.volume=15;
 
 		/* Version 2 configuration fields */
 		strncpy(config.extrom.name, "EXTENDED", sizeof(config.extrom.name));

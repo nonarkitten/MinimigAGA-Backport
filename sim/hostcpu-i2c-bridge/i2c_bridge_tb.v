@@ -60,13 +60,10 @@ module i2c_bridge_tb (
 		STATE_SET_PRL    = 4'h3,
 		STATE_SET_ADDR   = 4'h4,
 		STATE_WRITE_1    = 4'h5,
-		STATE_READ_INT_1 = 4'h6,
-		STATE_WRITE_2    = 4'h7,
-		STATE_READ_INT_2 = 4'h8,
-		STATE_WRITE_3    = 4'h9,
-		STATE_READ_INT_3 = 4'hA,
-		STATE_WAIT       = 5'hB,
-		STATE_FINISH     = 4'hC;
+		STATE_WRITE_2    = 4'h6,
+		STATE_WRITE_3    = 4'h7,
+		STATE_WAIT       = 5'h8,
+		STATE_FINISH     = 4'h9;
 	reg [3:0] state_reg = STATE_IDLE;
 
 
@@ -177,18 +174,7 @@ module i2c_bridge_tb (
 				req <= 1'b1;
 				//d <= 16'h221e; 
 				d <= {4'h0, CMD_WRITE_MULTI, 8'h1e};
-				if (interrupt == 1'd1) begin
-					req <= 1'b0;
-					state_reg <= STATE_READ_INT_1;
-				end
-			end
-			STATE_READ_INT_1: begin
-				//addr_p = 32'h800064;
-				addr_p = 32'h8000A0;
-				addr <= (addr_p >> 2);
-				wr <= 1'b0;
-				req <= 1'b1;
-				if (interrupt == 1'd0) begin
+				if (req == 1'd1) begin
 					req <= 1'b0;
 					state_reg <= STATE_WRITE_2;
 				end
@@ -200,18 +186,7 @@ module i2c_bridge_tb (
 				req <= 1'b1;
 				//d <= 16'h0211; 
 				d <= {4'h0, CMD_WRITE_MULTI, 8'hbb};
-				if (interrupt == 1'b1) begin
-					req <= 1'b0;
-					state_reg <= STATE_READ_INT_2;
-				end
-			end
-			STATE_READ_INT_2: begin
-				//addr_p = 32'h800064;
-				addr_p = 32'h8000A0;
-				addr <= (addr_p >> 2);
-				wr <= 1'b0;
-				req <= 1'b1;
-				if (interrupt == 1'd0) begin
+				if (req == 1'b1) begin
 					req <= 1'b0;
 					state_reg <= STATE_WRITE_3;
 				end
@@ -223,18 +198,7 @@ module i2c_bridge_tb (
 				req <= 1'b1;
 				//d <= 16'h0211; 
 				d <= {4'h1, CMD_WRITE_MULTI, 8'h27}; // Set 4'h1 high, indicate last byte, controller adds stop
-				if (interrupt == 1'b1) begin
-					req <= 1'b0;
-					state_reg <= STATE_READ_INT_3;
-				end
-			end
-			STATE_READ_INT_3: begin
-				//addr_p = 32'h800064;
-				addr_p = 32'h8000A0;
-				addr <= (addr_p >> 2);
-				wr <= 1'b0;
-				req <= 1'b1;
-				if (interrupt == 1'b0) begin
+				if (req == 1'b1) begin
 					req <= 1'b0;
 					state_reg <= STATE_WAIT;
 				end

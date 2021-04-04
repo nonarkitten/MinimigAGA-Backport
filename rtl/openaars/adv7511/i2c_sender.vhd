@@ -150,7 +150,7 @@ architecture behave of work.i2c_sender is
      (addr => x"20", reg => x"07", val => x"40"), -- Use internal oscillator for charge pump
      --(addr => x"20", reg => x"08", val => x"45"), -- Non interger mode 45C5 +- 48Khz 
      --(addr => x"20", reg => x"09", val => x"c5"), -- 
-     (addr => x"20", reg => x"08", val => x"00"), -- Non interger mode 45C5 +- 48Khz 
+     (addr => x"20", reg => x"08", val => x"00"), -- Non intereger mode 45C5 +- 48Khz 
      (addr => x"20", reg => x"09", val => x"00"), -- 
      (addr => x"20", reg => x"0a", val => x"08"), -- Slave mode, 16 bits
      -- Fill the rest of the array with 'FF'

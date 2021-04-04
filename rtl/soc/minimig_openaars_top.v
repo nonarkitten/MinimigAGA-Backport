@@ -199,8 +199,8 @@ assign amiga_reset_n = reset_n;
 assign menu_button = button_osd;
 
 // LED
-assign led_fdisk  = led_disk;
-assign led_hdisk = sd_cs; // Workaround for now
+assign led_fdisk  = ~led_disk;
+assign led_hdisk = sd_cs; // Should be replaced with the actual HD LED later
 assign led_core  = 1'b1;
 
 // PS2 ports tristate
