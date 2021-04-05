@@ -41,6 +41,8 @@ void audio_volume(unsigned char volume)
 {
   // Sanity check
   if (volume < 32) {
+	i2c_set_divider(0x0020);
+
     // Set the address of the audio chip (0x20)
     i2c_set_address(0x20);
 

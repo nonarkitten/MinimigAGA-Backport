@@ -116,6 +116,7 @@ wire        amiga_reset_n;
 wire        amiga_key_stb;
 
 // LED
+wire        led_fpower;
 wire        led_disk;
 
 // Input
@@ -199,6 +200,7 @@ assign amiga_reset_n = reset_n;
 assign menu_button = button_osd;
 
 // LED
+assign led_power = ~led_fpower;
 assign led_fdisk  = ~led_disk;
 assign led_hdisk = sd_cs; // Should be replaced with the actual HD LED later
 assign led_core  = 1'b1;
@@ -369,7 +371,7 @@ minimig_virtual_top
   .CLK_114(clk_114),
   .PLL_LOCKED(pll_locked_minimig),
   .RESET_N(reset_n),
-  .LED_POWER(led_power),
+  .LED_POWER(led_fpower),
   .LED_DISK(led_disk),
   .MENU_BUTTON(menu_button),
   .CTRL_TX(uart3_txd),

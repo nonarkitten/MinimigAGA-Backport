@@ -25,29 +25,28 @@ This is the Minimig I2C handler.
 #include "i2c.h"
 
 void i2c_set_divider(unsigned short div) {
-  I2C(HW_I2C_DIVIDER)=div;
+  unsigned int divout;
+  //unsigned int divout = ((div & 0xff)<<16) |  ((div & 0xff00)<<16) | 0xaaaa;
+  divout = (CMD_I2C_SET_SCL_L << 8) | div | 0xaaaa0000;
+  I2C(HW_I2C_DATA)=divout;
+  divout = (CMD_I2C_SET_SCL_H << 8) | ((0xff00 & div) >> 8) | 0xaaaa0000;
+  I2C(HW_I2C_DATA)=divout;
 }
 
-void i2c_set_address(unsigned short addr) {
-  unsigned short lo = (addr & 0xff);
-  unsigned short hi = (addr>>8) & 0xff;
-
-  //I2C(HW_I2C_DATA)=CMD_I2C_SET_SCL_L+lo;
-  //I2C(HW_I2C_DATA)=CMD_I2C_SET_SCL_H+hi;
-  (*(volatile unsigned short *)(I2C_BASE))=CMD_I2C_SET_SCL_L+lo;
-  (*(volatile unsigned short *)(I2C_BASE))=CMD_I2C_SET_SCL_H+hi;
+void i2c_set_address(unsigned char addr) {
+  I2C(HW_I2C_DATA)=CMD_I2C_SET_ADDR << 8 | addr | 0xaaa0000;
 }
 
 void i2c_start() {
-  I2C(HW_I2C_DATA)=CMD_I2C_START;
+  I2C(HW_I2C_DATA)=CMD_I2C_START<<8 | 0xaaaa0000;
 }
 
 void i2c_stop() {
-  I2C(HW_I2C_DATA)=CMD_I2C_STOP;
+  I2C(HW_I2C_DATA)=CMD_I2C_STOP<<8 | 0xaaaa0000;
 }
 
 void i2c_write(unsigned char byte) {
-  I2C(HW_I2C_DATA)=CMD_I2C_WRITE+(unsigned short)byte;
+  I2C(HW_I2C_DATA)=CMD_I2C_WRITE<<8 | (unsigned short)byte | 0xaaaa0000;
 }
 
 // Be aware, the send buffer is only 8 bytes!
@@ -55,9 +54,9 @@ void i2c_write_multi(unsigned char *byte, unsigned char size) {
   for (unsigned char pos=0; pos<size; pos++) {
     if (pos+1 == size) {
       // last byte
-      I2C(HW_I2C_DATA)=CMD_I2C_WRITEMULTI + CMD_I2C_LAST_BYTE + (unsigned short) *(byte+pos);
+      I2C(HW_I2C_DATA)=(CMD_I2C_WRITEMULTI | CMD_I2C_LAST_BYTE)<<8 | (unsigned short) *(byte+pos);
     } else {
-      I2C(HW_I2C_DATA)=CMD_I2C_WRITEMULTI + (unsigned short) *(byte+pos);
+      I2C(HW_I2C_DATA)=CMD_I2C_WRITEMULTI<<8 | (unsigned short) *(byte+pos);
     }
   }
 }

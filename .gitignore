@@ -49,3 +49,4 @@ xvhdl.*
 .hdl_checker/*
 .vscode/*
 vivado*
+fw/ctrl_832/*.asm

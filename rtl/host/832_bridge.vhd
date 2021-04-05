@@ -68,6 +68,16 @@ signal rom_wr : std_logic;
 signal rom_select : std_logic;
 signal hw_select : std_logic;
 
+attribute MARK_DEBUG : string;
+attribute MARK_DEBUG of cpu_addr : signal is "TRUE";
+attribute MARK_DEBUG of cpu_q : signal is "TRUE";
+attribute MARK_DEBUG of cpu_sel : signal is "TRUE";
+attribute MARK_DEBUG of cpu_req : signal is "TRUE";
+attribute MARK_DEBUG of rom_select : signal is "TRUE";
+attribute MARK_DEBUG of hw_select : signal is "TRUE";
+attribute MARK_DEBUG of hw_ack : signal is "TRUE";
+attribute MARK_DEBUG of ram_ack : signal is "TRUE";
+
 component hostcache
 port
 (

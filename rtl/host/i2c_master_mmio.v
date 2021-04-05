@@ -105,9 +105,9 @@ module i2c_master_mmio (
     reg        cmd_valid = 0;
     wire       cmd_ready;
                                   
-    (* MARK_DEBUG="true", KEEP="true" *)
+    //(* MARK_DEBUG="true", KEEP="true" *)
     reg  [7:0]data_in;
-    (* MARK_DEBUG="true", KEEP="true" *)
+    //(* MARK_DEBUG="true", KEEP="true" *)
     reg        data_in_valid;
     wire       data_in_ready;
     reg        data_in_last;
@@ -117,7 +117,7 @@ module i2c_master_mmio (
     reg        data_out_ready;
     wire       data_out_last;
 
-    (* MARK_DEBUG="true", KEEP="true" *)
+    //(* MARK_DEBUG="true", KEEP="true" *)
     reg [15:0] i2c_prescale = 0;
     reg        stop_on_idle = 0;
 
