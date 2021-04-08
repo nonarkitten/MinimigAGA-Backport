@@ -48,3 +48,4 @@ set_property -dict {PACKAGE_PIN G9 IOSTANDARD LVTTL DRIVE 12 SLEW FAST IOB TRUE}
 set_property -dict {PACKAGE_PIN H1 IOSTANDARD LVTTL DRIVE 12 SLEW FAST IOB TRUE} [get_ports dr_we_n]
 set_property -dict {PACKAGE_PIN H9 IOSTANDARD LVTTL DRIVE 12 SLEW FAST} [get_ports dr_cke]
 set_property -dict {PACKAGE_PIN H2 IOSTANDARD LVTTL DRIVE 12 SLEW FAST} [get_ports dr_clk]
+

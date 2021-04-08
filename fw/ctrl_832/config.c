@@ -345,8 +345,8 @@ unsigned char LoadConfiguration(char *filename)
 		strncpy(config.hardfile[1].name, "HARDFILE", sizeof(config.hardfile[1].name));
 		config.hardfile[1].long_name[0]=0;
 		config.hardfile[1].enabled = 2;	// Default is access to entire SD card
+		config.audio.volume = 15; // Average volume
 		updatekickstart=true;
-    config.audio.volume=15;
 
 		/* Version 2 configuration fields */
 		strncpy(config.extrom.name, "EXTENDED", sizeof(config.extrom.name));
