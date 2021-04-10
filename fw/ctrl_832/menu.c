@@ -86,13 +86,14 @@ const char *config_hdf_msg[] = {"Disabled", "Hardfile (disk img)", "MMC/SD card"
 const char *config_chipset_msg[] = {"OCS-A500", "OCS-A1000", "ECS", "---", "---", "---", "AGA", "---"};
 const char *config_turbo_msg[] = {"none", "CHIPRAM", "KICK", "BOTH"};
 const char *config_cd32pad_msg[] =  {"OFF", "ON"};
+const char *config_volume_msg[] = {" "," 1"," 2"," 3"," 4"," 5"," 6"," 7"," 8"," 9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31"};
 
 char *config_autofire_msg[] = {"        AUTOFIRE OFF", "        AUTOFIRE FAST", "        AUTOFIRE MEDIUM", "        AUTOFIRE SLOW"};
 
 enum HelpText_Message {HELPTEXT_NONE,HELPTEXT_MAIN,HELPTEXT_HARDFILE,HELPTEXT_CHIPSET,HELPTEXT_MEMORY,HELPTEXT_VIDEO};
 const char *helptexts[]={
 	0,
-	"                                Welcome to Minimig!  Use the cursor keys to navigate the menus.  Use space bar or enter to select an item.  Press Esc or F12 to exit the menus.  Joystick emulation on the numeric keypad can be toggled with the numlock key, while pressing Ctrl-Alt-0 (numeric keypad) toggles autofire mode.",
+	"                                Welcome to Minimig!  Use the cursor keys to navigate the menus.  Use space bar or enter to select an item.  Press Esc or F12 to exit the menus.  Mouse emulation on the numeric keypad can be toggled with the numlock key, while pressing Ctrl-Alt-0 (numeric keypad) toggles autofire mode.",
 	"                                Minimig can emulate an A600 IDE harddisk interface.  The emulation can make use of Minimig-style hardfiles (complete disk images) or UAE-style hardfiles (filesystem images with no partition table).  It is also possible to use either the entire SD card or an individual partition as an emulated harddisk.",
 	"                                Minimig's processor core can emulate a 68000 or 68020 processor.  Access to both Chip RAM and Kickstart ROM can be sped up with the Turbo function.  The emulated chipset can be either A500 or A1000 OCS, ECS or AGA.",
 #ifdef ACTIONREPLAY_BROKEN
@@ -151,6 +152,18 @@ void SelectFile(char* pFileExt, unsigned char Options, unsigned char MenuSelect,
     menustate = MENU_FILE_SELECT1;
 }
 
+void VolumeBar(unsigned char vol, char *bar) 
+{
+				for(int i=0; i < 32; i++) {
+					if(i < config.audio.volume) {
+						bar[i>>1] = '#';
+					} else {
+						bar[i>>1] = ' ';
+					}
+				}
+				bar[16] = '\0';
+}
+
 #define STD_EXIT "            exit"
 #define STD_BACK "            back"
 #define HELPTEXT_DELAY 2500
@@ -188,10 +201,12 @@ void HandleUI(void)
     static char t_enable_ide; // temporary copy of former enable_ide flag.
     static unsigned char ctrl = false;
     static unsigned char lalt = false;
+    static unsigned char lshift = false;
 	char enable;
 	static long helptext_timer;
 	static const char *helptext;
 	static char helpstate=0;
+	char  volume_bar[17];
 
     // get user control codes
     c = OsdGetCtrl();
@@ -220,6 +235,12 @@ void HandleUI(void)
     case KEY_LALT | KEY_UPSTROKE :
         lalt = false;
         break;
+	case KEY_LSHIFT :
+		lshift = true;
+		break;
+	case KEY_LSHIFT | KEY_UPSTROKE :
+		lshift = false;
+		break;
     case KEY_KPPLUS :
         if (ctrl && lalt)
         {
@@ -230,9 +251,24 @@ void HandleUI(void)
             else if (menustate == MENU_NONE2 || menustate == MENU_INFO)
                 InfoMessage("             TURBO");
         }
-		else
-			plus=true;
-        break;
+				else if (lshift) // volume up
+				{
+					if(config.audio.volume != 31){
+						config.audio.volume++;
+						ConfigAudio(config.audio.volume);
+					}
+					if (menustate == MENU_NONE2 || menustate == MENU_INFO) {
+						strcpy(s, "vol: ");
+						strcat(s, config_volume_msg[config.audio.volume]);
+						strcat(s, " ");
+						VolumeBar(config.audio.volume, volume_bar);
+						strcat(s, volume_bar);
+						InfoMessage(s);
+					}
+				}
+				else
+					plus=true;
+				break;
     case KEY_KPMINUS :
         if (ctrl && lalt)
         {
@@ -243,6 +279,21 @@ void HandleUI(void)
             else if (menustate == MENU_NONE2 || menustate == MENU_INFO)
                 InfoMessage("             NORMAL");
         }
+				else if (lshift) // Volume down 
+				{
+					if(config.audio.volume != 0) {
+						config.audio.volume--;
+						ConfigAudio(config.audio.volume);
+					}
+					if (menustate == MENU_NONE2 || menustate == MENU_INFO) {
+						strcpy(s, "vol: ");
+						strcat(s, config_volume_msg[config.audio.volume]);
+						strcat(s, " ");
+						VolumeBar(config.audio.volume, volume_bar);
+						strcat(s, volume_bar);
+						InfoMessage(s);
+					}
+				}
 		else
 			minus=true;
         break;
@@ -570,7 +621,7 @@ void HandleUI(void)
     case MENU_MAIN2_1 :
         OsdColor(OSDCOLOR_TOPLEVEL);
 		helptext=helptexts[HELPTEXT_MAIN];
-		menumask=0x3f;
+		menumask=0x7f;
  		OsdSetTitle("Settings",OSD_ARROW_LEFT|OSD_ARROW_RIGHT);
         OsdWrite(0, "    load configuration", menusub == 0,0);
         OsdWrite(1, "    save configuration", menusub == 1,0);
@@ -578,8 +629,8 @@ void HandleUI(void)
         OsdWrite(3, "    chipset settings \x16", menusub == 2,0);
         OsdWrite(4, "     memory settings \x16", menusub == 3,0);
         OsdWrite(5, "      video settings \x16", menusub == 4,0);
-        OsdWrite(6, "", 0,0);
-        OsdWrite(7, STD_EXIT, menusub == 5,0);
+        OsdWrite(6, "      audio settings \x16", menusub == 5,0);
+        OsdWrite(7, STD_EXIT, menusub == 6,0);
 
 		parentstate = menustate;
         menustate = MENU_MAIN2_2;
@@ -615,9 +666,11 @@ void HandleUI(void)
                 menustate = MENU_SETTINGS_VIDEO1;
                 menusub = 0;
             }
-            else if (menusub == 5)
-                menustate = MENU_NONE1;
-        }
+            else if (menusub == 5) {
+                menustate = MENU_SETTINGS_AUDIO1;
+                menusub = 0;
+						}
+				}
         else if (left)
         {
             menustate = MENU_MAIN1;
@@ -1398,7 +1451,7 @@ void HandleUI(void)
         }
         else if (right)
         {
-            menustate = MENU_SETTINGS_VIDEO1;
+            menustate = MENU_SETTINGS_AUDIO1;
             menusub = 0;
         }
         else if (left)
@@ -1821,9 +1874,9 @@ void HandleUI(void)
             }
             else if (menusub == 3)
             {
- 				short tmp=config.scanlines+4;
-				if((tmp&0xc)==0xc)
-					tmp=0;
+							short tmp=config.scanlines+4;
+							if((tmp&0xc)==0xc)
+								tmp=0;
                 config.scanlines=(config.scanlines&0xf3)|(tmp&0xc);
                 menustate = MENU_SETTINGS_VIDEO1;
                 ConfigVideo(config.filter.hires, config.filter.lores,config.scanlines);
@@ -1849,10 +1902,86 @@ void HandleUI(void)
         }
         else if (left)
         {
-            menustate = MENU_SETTINGS_MEMORY1;
+            menustate = MENU_SETTINGS_AUDIO1;
             menusub = 0;
         }
         break;
+
+        /******************************************************************/
+        /* video settings menu                                            */
+        /******************************************************************/
+    case MENU_SETTINGS_AUDIO1:
+				// Sanity
+				if (config.audio.volume > 31) {
+					config.audio.volume = 15;
+				}
+				// setup menu
+				helptext=helptexts[HELPTEXT_NONE];
+				parentstate=menustate;
+				// Enable/Disable selectable items
+				menumask=0x07;
+				//if(config.audio.volume < 32) menumask |= 0x01;
+				//if(config.audio.volume > 0) menumask |= 0x02;
+				// Items
+				OsdSetTitle("Audio",OSD_ARROW_LEFT|OSD_ARROW_RIGHT);
+        OsdWrite(0, "", 0,0);
+        OsdWrite(1, "Volume +", menusub == 0, 0);
+        OsdWrite(2, "Volume -", menusub == 1, 0);
+        OsdWrite(3, "", 0,0);
+				OsdWrite(4, "", 0,0);
+        strcpy(s, "   Volume : ");
+				strcat(s, config_volume_msg[config.audio.volume]);
+        strcat(s, " ");
+				VolumeBar(config.audio.volume, volume_bar);
+				strcat(s, volume_bar);
+        OsdWrite(5, s, 0, 0);
+        OsdWrite(6, "", 0, 0);
+        OsdWrite(7, STD_BACK, menusub == 2,0);
+
+        menustate = MENU_SETTINGS_AUDIO2;
+
+				break;
+
+		case MENU_SETTINGS_AUDIO2:
+				if (select) {
+						// Volume up
+            if (menusub == 0) {
+								if (config.audio.volume != 31)
+									config.audio.volume++;
+								ConfigAudio(config.audio.volume);
+                menustate = MENU_SETTINGS_AUDIO1;
+            }
+						// Volume down
+						if (menusub == 1) {
+								if (config.audio.volume != 0)
+									config.audio.volume--;
+								ConfigAudio(config.audio.volume);
+                menustate = MENU_SETTINGS_AUDIO1;
+						}
+						if (menusub == 2)
+						{
+							menustate = MENU_MAIN2_1;
+							menusub = 4;
+						}
+				}
+
+        if (menu)
+        {
+            menustate = MENU_MAIN2_1;
+            menusub = 4;
+        }
+        else if (right)
+        {
+            menustate = MENU_SETTINGS_VIDEO1;
+            menusub = 0;
+        }
+        else if (left)
+        {
+            menustate = MENU_SETTINGS_MEMORY1;
+            menusub = 0;
+        }
+
+				break;
 
         /******************************************************************/
         /* rom file selected menu                                         */

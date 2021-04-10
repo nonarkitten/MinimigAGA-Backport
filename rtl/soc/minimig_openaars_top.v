@@ -40,8 +40,9 @@ module minimig_openaars_top (
   output dr_we_n,
   // ADV7511 video chip
   output dv_clk,
-  inout dv_sda,
-  inout dv_scl,
+  // I2C interconnect ADV7511, MAX9850
+  inout io_sda,
+  inout io_scl,
   // input dv_int,
   output dv_de,
   output dv_hsync,
@@ -104,6 +105,7 @@ module minimig_openaars_top (
 wire        clk_in;
 wire        clk_28;
 wire        clk_114;
+wire        clk_200;
 wire        clk_fb_main;
 wire        pll_locked_main;
 wire        pll_locked_minimig;
@@ -111,8 +113,10 @@ wire        pll_locked_minimig;
 // Reset
 wire        reset_n;
 wire        amiga_reset_n;
+wire        amiga_key_stb;
 
 // LED
+wire        led_fpower;
 wire        led_disk;
 
 // Input
@@ -172,6 +176,20 @@ wire        sd_mosi;
 wire        sd_clk;
 wire        sd_cs;
 
+// I2C
+wire        scl_i;
+wire        scl_t;
+wire        scl_o;
+wire        sda_i;
+wire        sda_t;
+wire        sda_o;
+wire        dv_scl_i;
+wire        dv_scl_t;
+wire        dv_scl_o;
+wire        dv_sda_i;
+wire        dv_sda_t;
+wire        dv_sda_o;
+
 ////////////////////////////////////////
 // toplevel assignments               //
 ////////////////////////////////////////
@@ -182,9 +200,10 @@ assign amiga_reset_n = reset_n;
 assign menu_button = button_osd;
 
 // LED
-assign led_fdisk  = led_disk;
-assign led_hdisk = 1'b1; // Workaround for now
-assign led_core  = sd_cs;
+assign led_power = ~led_fpower;
+assign led_fdisk  = ~led_disk;
+assign led_hdisk = sd_cs; // Should be replaced with the actual HD LED later
+assign led_core  = 1'b1;
 
 // PS2 ports tristate
 // keyboard
@@ -236,6 +255,15 @@ MMCME2_BASE #(
   .LOCKED(pll_locked_main)
 );
 
+////////////////////////////////////////
+// I2C bus logic                      //
+////////////////////////////////////////
+assign scl_i = io_scl;
+assign dv_scl_i = io_scl;
+assign io_scl = (scl_t == 1'b0 | dv_scl_t == 1'b0) ? 1'b0 : 1'bZ;
+assign sda_i = io_sda;
+assign dv_sda_i = io_sda;
+assign io_sda = (sda_t == 1'b0 | dv_sda_t == 1'b0) ? 1'b0 : 1'bZ;
 
 ////////////////////////////////////////
 // Modules                            //
@@ -301,14 +329,19 @@ i2c_sender myi2c_sender (
   .rst(!reset_n),                                          
   .resend(1'b0),                                         
   .read_regs(1'b0),                                      
-  .sioc(dv_scl),                                        
-  .siod(dv_sda)
+  .scl_i(dv_scl_i),
+  .scl_t(dv_scl_t),
+  .scl_o(dv_scl_o),
+  .sda_i(dv_sda_i),
+  .sda_t(dv_sda_t),
+  .sda_o(dv_sda_o)
 );
 
 // Video signal to dual data rate
 // To save pins on the FPGA
 pal_to_ddr my_pal_to_ddr (
   .clk(clk_200),
+  .reset(~reset_n),
   // Input PAL
   .i_pal_vsync(!vga_vs),
   .i_pal_hsync(!vga_hs),
@@ -330,14 +363,15 @@ minimig_virtual_top
 #( .debug(1'b0),
   .havertg(1'b0),
   .haveaudio(1'b1),
-  .havec2p(1'b0)
+  .havec2p(1'b0),
+  .havei2c(1'b1)
 ) openaars_virtual_top (
   .CLK_IN(clk_50),
   .CLK_28(clk_28),
   .CLK_114(clk_114),
   .PLL_LOCKED(pll_locked_minimig),
   .RESET_N(reset_n),
-  .LED_POWER(led_power),
+  .LED_POWER(led_fpower),
   .LED_DISK(led_disk),
   .MENU_BUTTON(menu_button),
   .CTRL_TX(uart3_txd),
@@ -385,7 +419,13 @@ minimig_virtual_top
   .SD_MOSI(sd_mosi),
   .SD_CLK(sd_clk),
   .SD_CS(sd_cs),
-  .SD_ACK(1'b1)
+  .SD_ACK(1'b1),
+  .SCL_I(scl_i),
+  .SCL_O(scl_o),
+  .SCL_T(scl_t),
+  .SDA_I(sda_i),
+  .SDA_O(sda_o),
+  .SDA_T(sda_t)
 );
 
 endmodule

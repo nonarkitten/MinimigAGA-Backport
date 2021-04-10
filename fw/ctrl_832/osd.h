@@ -50,7 +50,7 @@
 #define REPEATRATE       25          // repeat rate in audio ticks
 #define BUTTONDELAY      20          // repeat rate in audio ticks
 
-#define KEY_UPSTROKE     0x80
+#define KEY_UPSTROKE     0x80		 // These codes are from the Amiga key map (not PC)
 #define KEY_MENU         0x69
 #define KEY_PGUP         0x6C
 #define KEY_PGDN         0x6D
@@ -76,6 +76,8 @@
 #define KEY_F10          0x59
 #define KEY_CTRL         0x63
 #define KEY_LALT         0x64
+#define KEY_LSHIFT       0x60
+#define KEY_RSHIFT       0x61
 #define KEY_KPPLUS       0x5E
 #define KEY_KPMINUS      0x4A
 #define KEY_KP0          0x0F
@@ -114,6 +116,7 @@ void OsdReconfig(); // Reset to Chameleon core.
 void MM1_ConfigFilter(unsigned char lores, unsigned char hires);
 void MM1_ConfigScanlines(unsigned char scanlines);
 void ConfigVideo(unsigned char hires, unsigned char lores, unsigned char scanlines);
+void ConfigAudio(unsigned char volume);
 void ConfigMemory(unsigned char memory);
 void ConfigCPU(unsigned char cpu);
 void ConfigChipset(unsigned char chipset);

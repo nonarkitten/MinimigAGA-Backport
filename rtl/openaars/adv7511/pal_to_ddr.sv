@@ -20,6 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 module pal_to_ddr(
         input clk,
+        input reset,
         // Pal input
         input i_pal_hsync,
         input i_pal_vsync,
@@ -93,6 +94,7 @@ module pal_to_ddr(
     // Upscale the video signal using a line buffer
     pal_to_hd_upsample myupsample(
         .clk(clk),
+        .reset(reset),
         // Pal input
         .i_pal_hsync(__i_pal_hsync),
         .i_pal_vsync(__i_pal_vsync),
@@ -116,6 +118,7 @@ module pal_to_ddr(
     // Generate the 720p Hsync and Vsync signals
     signal_generator hd_gen(
         .clk(clk),
+        .reset(reset),
         //.i_vblank_width(w_vblank_width),
         .i_frame_end(w_frame_end),
         .i_r(w_r),

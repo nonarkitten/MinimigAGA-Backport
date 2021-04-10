@@ -10,8 +10,8 @@
 # Time constraints
 
 # I2C INTERFACE
-set_property -dict {PACKAGE_PIN T25 IOSTANDARD LVTTL} [get_ports dv_sda]
-set_property -dict {PACKAGE_PIN V21 IOSTANDARD LVTTL} [get_ports dv_scl]
+set_property -dict {PACKAGE_PIN T25 IOSTANDARD LVTTL} [get_ports io_sda]
+set_property -dict {PACKAGE_PIN V21 IOSTANDARD LVTTL} [get_ports io_scl]
 
 # CLOCK AND ENABLE SIGNALS
 set_property -dict {PACKAGE_PIN M26 IOSTANDARD LVTTL} [get_ports dv_de]
@@ -39,3 +39,4 @@ set_property -dict {PACKAGE_PIN N26 IOSTANDARD LVTTL} [get_ports {dv_d[0]}]
 
 # ADV CEC clock
 set_property -dict {PACKAGE_PIN W23 IOSTANDARD LVTTL} [get_ports dv_cecclk]
+

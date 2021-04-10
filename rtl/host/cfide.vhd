@@ -22,9 +22,6 @@
 -- Modifications by Alastair M. Robinson to work with a cheap
 -- Ebay Cyclone III board.
 
-
-
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
@@ -107,6 +104,7 @@ signal timer_select: std_logic;
 signal SPI_select: std_logic;
 signal platformdata: std_logic_vector(15 downto 0);
 signal IOdata: std_logic_vector(15 downto 0);
+signal I2Cdata: std_logic_vector(15 downto 0);
 signal IOcpuena: std_logic;
 
 type support_states is (idle, io_aktion);
@@ -145,58 +143,34 @@ signal amiga_req_d : std_logic;
 
 signal rtc_select : std_logic;
 signal i2c_select : std_logic;
+signal i2c_int    : std_logic;
 signal spirtcpresent : std_logic;
 
--- I2C
-signal cmd_address : std_logic_vector(6 downto 0);
-signal cmd_start : std_logic;
-signal cmd_read : std_logic;
-signal cmd_write : std_logic;
-signal cmd_write_multiple : std_logic;
-signal cmd_stop : std_logic;
-signal cmd_valid : std_logic;
-signal cmd_ready : std_logic;
+signal reset : std_logic;
 
-signal data_in : std_logic_vector(7 downto 0);
-signal data_in_valid : std_logic;
-signal data_in_ready : std_logic;
-signal data_in_last : std_logic;
 
-signal data_out : std_logic_vector(7 downto 0);
-signal data_out_valid : std_logic;
-signal data_out_ready : std_logic;
-signal data_out_last : std_logic;
-
-signal r_busy : std_logic;
-
--- attribute MARK_DEBUG : string;
--- attribute MARK_DEBUG of addr : signal is "TRUE";
--- attribute MARK_DEBUG of wr : signal is "TRUE";
--- attribute MARK_DEBUG of d : signal is "TRUE";
--- attribute MARK_DEBUG of q : signal is "TRUE";
--- attribute MARK_DEBUG of sd_di : signal is "TRUE";
--- attribute MARK_DEBUG of sd_cs : signal is "TRUE";
--- attribute MARK_DEBUG of sd_clk : signal is "TRUE";
--- attribute MARK_DEBUG of sd_do : signal is "TRUE";
--- attribute MARK_DEBUG of sd_dimm : signal is "TRUE";
--- attribute MARK_DEBUG of ack : signal is "TRUE";
--- attribute MARK_DEBUG of req : signal is "TRUE";
--- attribute MARK_DEBUG of SPI_select : signal is "TRUE";
--- attribute MARK_DEBUG of sd_di_in : signal is "TRUE";
--- attribute MARK_DEBUG of spi_wait : signal is "TRUE";
--- attribute MARK_DEBUG of sd_in_shift : signal is "TRUE";
-
--- I2C Prescaler
--- prescale = Fclk / (FI2Cclk * 4)
-constant bit_0        : std_logic:= '0';
-constant i2c_prescale : std_logic_vector(15 downto 0) := std_logic_vector(to_unsigned(200, 16));
+attribute MARK_DEBUG : string;
+attribute MARK_DEBUG of i2c_select : signal is "TRUE";
+attribute MARK_DEBUG of I2Cdata : signal is "TRUE";
+attribute MARK_DEBUG of d : signal is "TRUE";
+attribute MARK_DEBUG of req : signal is "TRUE";
+attribute MARK_DEBUG of scl_i : signal is "TRUE";
+attribute MARK_DEBUG of scl_o : signal is "TRUE";
+attribute MARK_DEBUG of scl_t : signal is "TRUE";
+attribute MARK_DEBUG of sda_i : signal is "TRUE";
+attribute MARK_DEBUG of sda_o : signal is "TRUE";
+attribute MARK_DEBUG of sda_t : signal is "TRUE";
+attribute MARK_DEBUG of addr : signal is "TRUE";
 
 begin
+
+reset <= not n_reset;
 
 -- Peripheral registers are only 16-bits wide.
 
 q(15 downto 0) <= IOdata when rs232_select='1' or SPI_select='1' else
-		timecnt(23 downto 8) when timer_select='1' ELSE
+		I2Cdata when i2c_select='1' else
+		timecnt(23 downto 8) when timer_select='1' else
 		audio_q when audio_select='1' else
 		keyboard_q when keyboard_select='1' else
 		amigatohost when amiga_select='1' else
@@ -267,7 +241,7 @@ end process;
 
 -- Amiga interface at 0fffff80
 
-process (clk_28,n_reset)
+process (clk_28)
 begin
 	if rising_edge(clk_28) then
 
@@ -293,7 +267,7 @@ end process;
 
 -- C64 Keyboard handling at 0fffff90
 
-process (clk_28,n_reset)
+process (clk_28)
 begin
 	if rising_edge(clk_28) then
 		amiga_key_stb<='0';
@@ -329,7 +303,7 @@ begin
 		interrupt_ena<='0';
 	elsif rising_edge(clk_28) then
 		amiga_req_d<=amiga_req;
-		if vbl_int='1' or (amiga_req='1' and amiga_req_d='0') then
+		if vbl_int='1' or i2c_int='1' or (amiga_req='1' and amiga_req_d='0') then
 			interrupt<=interrupt_ena;
 		end if;
 		if interrupt_select='1' and req='1' then
@@ -346,7 +320,7 @@ end process;
 -- Platform specific registers --
 ---------------------------------
 
-process(clk_28,n_reset)
+process(clk_28)
 begin
 	if rising_edge(clk_28) then
 		if req='1' and wr='1' then
@@ -368,7 +342,7 @@ end process;
 -----------------------------------------------------------------
 -- Support States
 -----------------------------------------------------------------
-process(sysclk, shift)
+process(sysclk)
 begin
   	IF rising_edge(sysclk) THEN
 --		support_state <= idle;
@@ -552,56 +526,33 @@ end process;
 -----------------------------------------------------------------
 i2c_master: if (havei2c) generate
 
-	-- MMIO I2C
-process(clk_28) begin
-	if rising_edge(clk_28) then
+-- I2C master
+--   my_i2c_master: entity work.i2c_master port map (
+my_i2c_mmio: entity work.i2c_master_mmio port map (
+    clk => clk_28,
+    rst => reset,
 
-	end if;
-end process;
+    d => d,
+    q => I2Cdata,
 
-	-- I2C Master
-	my_i2c_master: entity work.i2c_master port map (
-       clk => clk_28,
-       rst => (NOT n_reset),
+    interrupt => i2c_int,
 
-       -- Host interface
-       cmd_address => cmd_address,
-       cmd_start => cmd_start,
-       cmd_read => cmd_read,
-       cmd_write => cmd_write,
-       cmd_write_multiple => cmd_write_multiple,
-       cmd_stop => cmd_stop,
-       cmd_valid => cmd_valid,
-       cmd_ready => cmd_ready,
+    -- MMIO interface
+    addr => addr,
+    i2c_select => i2c_select,
+	interrupt_select => interrupt_select,
+    req => req,
+    wr => wr,
 
-       data_in => data_in,
-       data_in_valid => data_in_valid,
-       data_in_ready => data_in_ready,
-       data_in_last => data_in_last,
+    -- I2C interface
+    scl_i => scl_i,
+    scl_o => scl_o,
+    scl_t => scl_t,
+    sda_i => sda_i,
+    sda_o => sda_o,
+    sda_t => sda_t
+);
 
-       data_out => data_out,
-       data_out_valid => data_out_valid,
-       data_out_ready => data_out_ready,
-       data_out_last => data_out_last,
-
-       -- I2C interface
-       scl_i => scl_i,
-       scl_o => scl_o,
-       scl_t => scl_t,
-       sda_i => sda_i,
-       sda_o => sda_o,
-       sda_t => sda_t,
-
-        -- Status
-       busy => r_busy,
-       bus_control => open,
-       bus_active => open,
-       missed_ack => open,
-
-       -- Configuration
-       prescale => i2c_prescale,
-       stop_on_idle => bit_0
-   );
 
 end generate;
 

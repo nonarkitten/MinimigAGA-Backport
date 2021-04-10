@@ -40,6 +40,7 @@ This is the Minimig OSD (on-screen-display) handler.
 
 #include "charrom.h"
 #include "logo.h"
+#include "audio.h"
 
 #include "string.h"
 
@@ -851,6 +852,13 @@ void ConfigVideo(unsigned char hires, unsigned char lores, unsigned char scanlin
     DisableOsd();
 }
 
+void ConfigAudio(unsigned char volume)
+{
+  EnableOsd();
+  audio_volume(volume);
+  DisableOsd();
+}
+
 void ConfigMemory(unsigned char memory)
 {
     EnableOsd();
@@ -912,7 +920,6 @@ void ConfigAutofire(unsigned char autofire)
     SPI(autofire & 0x03);
     DisableOsd();
 }
-
 
 // get key status
 unsigned char OsdGetCtrl(void)

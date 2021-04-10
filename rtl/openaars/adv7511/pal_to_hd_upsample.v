@@ -22,6 +22,7 @@
 
 module pal_to_hd_upsample(
     input clk,
+    input reset,
     // Pal input
     input           i_pal_hsync,
     input           i_pal_vsync,
@@ -139,7 +140,9 @@ module pal_to_hd_upsample(
     reg [5:0]   r_pix_clock_count = 6'b0;
     reg         r_pix_en = 1'b0;
     always @(posedge clk) begin
-        if (r_line_active) begin
+        if (reset) begin
+            r_pix_clock_count <= 1'b0;
+        end else if (r_line_active) begin
             r_pix_clock_count <= r_pix_clock_count + 3'b100;
 
             r_pix_en <= 1'b0;
@@ -197,7 +200,7 @@ module pal_to_hd_upsample(
                     r_addra <= 13'h3000;
                 7:
                     r_addra <= 13'h3800;
-            endcase;
+            endcase
         end
 
         // read from buffer
@@ -262,7 +265,7 @@ module pal_to_hd_upsample(
                     r_addrb <= 14'h3000 + OFFSET_HZ;
                 7:
                     r_addrb <= 14'h3800 + OFFSET_HZ;
-            endcase;
+            endcase
         end
 
         // Provide end of sync signal
@@ -305,6 +308,7 @@ module pal_to_hd_upsample(
     // Change the Vsync timing to translate the image up N lines
     translate_vert my_translate_vert (
         .clk(clk),
+        .reset(reset),
         .pix_en(r_pix_en),      // Pixel clock
         .i_vsync(i_hd_vsync),   // Original Vsync signal
         .v_trans(OFFSET_VT),    // Number of lines to translate the vsync down
@@ -314,6 +318,7 @@ endmodule
 
 module translate_vert(
     input clk,
+    input reset,
     input pix_en,                               // Pixel clock
     input i_vsync,                              // Original Vsync signal
     input [8:0] v_trans,                        // Number of lines to translate the vsync down
@@ -339,48 +344,60 @@ module translate_vert(
 
     // generate hsync up/down pulse
     always @(posedge clk) begin
-        vsync2 <= i_vsync;
+        if (reset) begin
+            vsync_pulse <= 0;
+        end else begin
+            vsync2 <= i_vsync;
 
-        // Vsync delta pulse
-        vsync_pulse <= 0;
-        if (i_vsync != vsync2) begin
-           vsync_pulse <= 1;
-        end 
+            // Vsync delta pulse
+            vsync_pulse <= 0;
+            if (i_vsync != vsync2) begin
+                vsync_pulse <= 1;
+            end 
+        end
     end
 
     // Handle delay of vsync to translate the image
     // The more the vsync is delayed, the more the image moves up
     always @(posedge clk) begin
-        // from 0 to 1
-        if (vsync_pulse && i_vsync) begin
-            delay_count_1 <= HZ_TOTAL*v_trans;
-            delay_count_1_start <= 1;
-        end 
-        // from 1 to 0
-        if (vsync_pulse && ~i_vsync) begin
-            delay_count_0 <= HZ_TOTAL*v_trans;
-            delay_count_0_start <= 1;
-        end        
-
-        // Decrease the counter based on the pixel clock
-        if (pix_en) begin
-            if (delay_count_0_start) begin
-                delay_count_0 <= delay_count_0 - 1;
-            end
-            if (delay_count_1_start) begin
-                delay_count_1 <= delay_count_1 - 1;
-            end
-        end
-
-        // When the counters are done change the output signal
-        if ((delay_count_1 == 0) && delay_count_1_start) begin
-            delay_count_1_start <= 0;
-            r_vsync <= 1;    
-        end
-
-        if ((delay_count_0 == 0) && delay_count_0_start) begin
+        if (reset) begin
+            delay_count_0 <= 0;
             delay_count_0_start <= 0;
-            r_vsync <= 0;    
+            delay_count_1 <= 0;
+            delay_count_1_start <= 0;
+            r_vsync <= 0;
+        end else begin
+            // from 0 to 1
+            if (vsync_pulse && i_vsync) begin
+                delay_count_1 <= HZ_TOTAL*v_trans;
+                delay_count_1_start <= 1;
+            end 
+            // from 1 to 0
+            if (vsync_pulse && ~i_vsync) begin
+                delay_count_0 <= HZ_TOTAL*v_trans;
+                delay_count_0_start <= 1;
+            end        
+
+            // Decrease the counter based on the pixel clock
+            if (pix_en) begin
+                if (delay_count_0_start) begin
+                    delay_count_0 <= delay_count_0 - 1;
+                end
+                if (delay_count_1_start) begin
+                    delay_count_1 <= delay_count_1 - 1;
+                end
+            end
+
+            // When the counters are done change the output signal
+            if ((delay_count_1 == 0) && delay_count_1_start) begin
+                delay_count_1_start <= 0;
+                r_vsync <= 1;    
+            end
+
+            if ((delay_count_0 == 0) && delay_count_0_start) begin
+                delay_count_0_start <= 0;
+                r_vsync <= 0;    
+            end
         end
     end
 endmodule
