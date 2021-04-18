@@ -236,14 +236,20 @@ assign pmod_9     = vga_hs;
 assign pmod_2     = vga_cs;
 assign pmod_11    = vga_pixel;
 
+// UART Either Amiga or Debug 
+//assign ctrl_rx = uart3_rxd;
+//assign uart3_txd = ctrl_tx;
+assign amiga_rx = uart3_rxd;
+assign uart3_txd = amiga_tx;
+
 ////////////////////////////////////////
 // HDMI Clock                         //
 ////////////////////////////////////////
 MMCME2_BASE #(
   .CLKIN1_PERIOD(20.0),   // 50      MHz (10 ns)
-  .CLKFBOUT_MULT_F(32.0), // 1600.0  MHz *16.875 common multiply
-  .DIVCLK_DIVIDE(2),      // 800     MHz /2 common divide
-  .CLKOUT0_DIVIDE_F(4),   // 200     MHz /4 divide
+  .CLKFBOUT_MULT_F(32.2932), // 1593.0  MHz *16.875 common multiply
+  .DIVCLK_DIVIDE(2),      // 796,812    MHz /2 common divide
+  .CLKOUT0_DIVIDE_F(4),   // 199,203    MHz /4 divide
   .BANDWIDTH("LOW")
 ) clk_hdmi (
   .PWRDWN(1'b0),
@@ -374,8 +380,8 @@ minimig_virtual_top
   .LED_POWER(led_fpower),
   .LED_DISK(led_disk),
   .MENU_BUTTON(menu_button),
-  .CTRL_TX(uart3_txd),
-  .CTRL_RX(uart3_rxd),
+  .CTRL_TX(ctrl_tx),
+  .CTRL_RX(ctrl_rx),
   .AMIGA_TX(amiga_tx),
   .AMIGA_RX(amiga_rx),
   .VGA_PIXEL(vga_pixel),
