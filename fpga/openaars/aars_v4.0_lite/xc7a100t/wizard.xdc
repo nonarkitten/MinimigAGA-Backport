@@ -21,3 +21,10 @@ resize_pblock [get_pblocks pblock_sdram] -add {SLICE_X52Y71:SLICE_X89Y98}
 resize_pblock [get_pblocks pblock_sdram] -add {DSP48_X1Y30:DSP48_X2Y37}
 resize_pblock [get_pblocks pblock_sdram] -add {RAMB18_X1Y30:RAMB18_X3Y37}
 resize_pblock [get_pblocks pblock_sdram] -add {RAMB36_X1Y15:RAMB36_X3Y18}
+
+connect_debug_port u_ila_0/probe0 [get_nets [list {myi2c_sender/send_state__0[0]} {myi2c_sender/send_state__0[1]} {myi2c_sender/send_state__0[2]}]]
+
+
+
+connect_debug_port u_ila_0/probe0 [get_nets [list {myi2c_sender/send_state[0]} {myi2c_sender/send_state[1]} {myi2c_sender/send_state[2]} {myi2c_sender/send_state[3]}]]
+

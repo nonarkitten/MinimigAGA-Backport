@@ -43,7 +43,8 @@ module minimig_openaars_top (
   // I2C interconnect ADV7511, MAX9850
   inout io_sda,
   inout io_scl,
-  // input dv_int,
+  (* mark_debug = "true" *)
+  input dv_int,
   output dv_de,
   output dv_hsync,
   output dv_vsync,
@@ -86,6 +87,7 @@ module minimig_openaars_top (
   input exp_side,
   // Board button input
   input sys_reset_in,
+  (* mark_debug = "true" *)
   input button_user,
   input button_osd,
   // pmod
@@ -247,9 +249,9 @@ assign uart3_txd = amiga_tx;
 ////////////////////////////////////////
 MMCME2_BASE #(
   .CLKIN1_PERIOD(20.0),   // 50      MHz (10 ns)
-  .CLKFBOUT_MULT_F(32.2932), // 1593.0  MHz *16.875 common multiply
-  .DIVCLK_DIVIDE(2),      // 796,812    MHz /2 common divide
-  .CLKOUT0_DIVIDE_F(4),   // 199,203    MHz /4 divide
+  .CLKFBOUT_MULT_F(32.2932), // 1614.66  MHz 
+  .DIVCLK_DIVIDE(2),      // 807.33    MHz /2 common divide
+  .CLKOUT0_DIVIDE_F(4),   // 201.8325    MHz /4 divide
   .BANDWIDTH("LOW")
 ) clk_hdmi (
   .PWRDWN(1'b0),
@@ -285,13 +287,12 @@ gen_reset #(
   .button(!sys_reset_in),
   .nreset(reset_n_50)
 );
-reg r_reset_n;
-reg r_reset_n_;
+reg [1:0] r_reset_sync;
+//wire r_reset_n_;
 always @(posedge clk_28) begin
-  r_reset_n_ <= reset_n_50;
-  r_reset_n <= r_reset_n_;
+  r_reset_sync <= { r_reset_sync[0], reset_n_50 };
 end
-assign reset_n = r_reset_n;
+assign reset_n = r_reset_sync[1];
 
 // SPI to joystick / mouse input
 // Joystick bits(5-0) = fire2,fire,up,down,left,right mapped to GPIO header
@@ -335,6 +336,7 @@ i2c_sender myi2c_sender (
   .rst(!reset_n),                                          
   .resend(1'b0),                                         
   .read_regs(1'b0),                                      
+  .dv_int(dv_int | ~button_user),
   .scl_i(dv_scl_i),
   .scl_t(dv_scl_t),
   .scl_o(dv_scl_o),
@@ -419,8 +421,8 @@ minimig_virtual_top
   .C64_KEYS(64'hFEDCBA9876543210), // What for ?? 
   .JOYA(joya),
   .JOYB(joyb),
-  .JOYC(open),
-  .JOYD(open),
+  .JOYC(),
+  .JOYD(),
   .SD_MISO(sd_miso),
   .SD_MOSI(sd_mosi),
   .SD_CLK(sd_clk),

@@ -27,7 +27,8 @@ Port
   scl_o     : out   STD_LOGIC;
   sda_i     : in    STD_LOGIC;
   sda_t     : out   STD_LOGIC;
-  sda_o     : out   STD_LOGIC
+  sda_o     : out   STD_LOGIC;
+  dv_int    : in    STD_LOGIC
 );
 end i2c_sender;
 
@@ -59,6 +60,10 @@ architecture behave of work.i2c_sender is
 
    -- Status
    signal r_busy : std_logic;
+
+   -- ADV7511 interrupt
+   signal dv_int_sync : std_logic_vector(2 downto 0);
+   signal dv_int_enable : std_logic;
 
    -- Tristate
    -- signal scl_i : std_logic;
@@ -235,6 +240,19 @@ begin
       end if;
    end process;
 
+   int_sync: process(clk)
+   begin
+      if rising_edge(clk) then
+         -- Synchronize the inturrupt signal
+         dv_int_sync <= dv_int_sync(1) & dv_int_sync(0) & dv_int;
+
+         -- Create enable on change
+         dv_int_enable <= '0';
+         if (dv_int_sync(2) = '0' and dv_int_sync(1) = '1') then
+            dv_int_enable <= '1';
+         end if;
+      end if;
+   end process;
 
    -- Transmit registers state machine
    statemachine: process(clk)
@@ -300,7 +318,7 @@ begin
                   cmd_write_multiple <= '0';
                   cmd_stop  <= '0';
                   address <= (others => '0');
-                  if (resend = '1') then
+                  if (resend = '1' or dv_int_enable = '1') then
                      send_state <= START;
                   end if;
                   if (read_regs = '1') then

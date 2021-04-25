@@ -62,8 +62,8 @@ module signal_generator(
     parameter DE_POL   = 1'b1; // Sync polarity 1'b1 = positive, 1'b0 is negative
     
     // Clock devider
-    reg r_clock_dev = 1'b0;
-    reg r_vid_enable = 1'b0;
+    reg r_clock_dev = 1'b0;  // 100MHz clock
+    reg r_vid_enable = 1'b0; // 50MHz enable
     
     // Frame pulse
     reg r_frame = 1'b0;

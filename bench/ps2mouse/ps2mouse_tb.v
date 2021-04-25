@@ -46,7 +46,7 @@ end
 
 initial begin
   RST = 1'b1;
-  #1000;
+  #5000;
   RST = 1'b0;
   repeat(10) @ (posedge CLK7);
 end
