@@ -140,7 +140,8 @@ architecture behave of work.i2c_sender is
      (addr => x"72", reg => x"d1", val => x"ff"), -- Nbr of times to search for good phase
      (addr => x"72", reg => x"de", val => x"9c"), -- ADI required write
      (addr => x"72", reg => x"e4", val => x"9c"), -- ADI required write
-     (addr => x"72", reg => x"96", val => x"20"), -- Clear HPD interrupt
+     (addr => x"72", reg => x"94", val => x"40"), -- Enable HDP interrupt
+     (addr => x"72", reg => x"96", val => x"40"), -- Clear HPD interrupt flag
      (addr => x"72", reg => x"fa", val => x"00"), -- Nbr of times to search for good phase
      -- Set the video clock delay
      (addr => x"72", reg => x"ba", val => x"60"), -- Configure no clock delay
@@ -248,7 +249,7 @@ begin
 
          -- Create enable on change
          dv_int_enable <= '0';
-         if (dv_int_sync(2) = '0' and dv_int_sync(1) = '1') then
+         if (dv_int_sync(2) /= dv_int_sync(1)) then
             dv_int_enable <= '1';
          end if;
       end if;
