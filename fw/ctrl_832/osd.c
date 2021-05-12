@@ -852,6 +852,16 @@ void ConfigVideo(unsigned char hires, unsigned char lores, unsigned char scanlin
     DisableOsd();
 }
 
+void ConfigVideoPos(unsigned char hpos, unsigned char vpos)
+{
+	EnableOsd();
+	VIDEOSCALE_SET_POS = (hpos + ((unsigned short)vpos << 8));
+	//VIDEOSCALE_SET_POS = 0x3280;
+	//*((volatile unsigned int *)0x0fffff50) = 0x3281;
+
+	DisableOsd();
+}
+
 void ConfigAudio(unsigned char volume)
 {
   EnableOsd();

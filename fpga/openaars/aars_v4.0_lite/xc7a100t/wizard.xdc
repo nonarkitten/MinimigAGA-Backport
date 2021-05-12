@@ -28,3 +28,5 @@ connect_debug_port u_ila_0/probe0 [get_nets [list {myi2c_sender/send_state__0[0]
 
 connect_debug_port u_ila_0/probe0 [get_nets [list {myi2c_sender/send_state[0]} {myi2c_sender/send_state[1]} {myi2c_sender/send_state[2]} {myi2c_sender/send_state[3]}]]
 
+
+

@@ -347,6 +347,8 @@ unsigned char LoadConfiguration(char *filename)
 		config.hardfile[1].enabled = 2;	// Default is access to entire SD card
 		config.audio.volume = 15; // Average volume
 		updatekickstart=true;
+		config.videopos.hpos=0;
+		config.videopos.vpos=0;
 
 		/* Version 2 configuration fields */
 		strncpy(config.extrom.name, "EXTENDED", sizeof(config.extrom.name));

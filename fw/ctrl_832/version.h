@@ -1,6 +1,6 @@
-#define MM_FIRMWARE_VERSION "2021-4-5"
-#define MM_VERSTRING "$VER:AMR2145-832"
+#define MM_FIRMWARE_VERSION "2021-5-9-23-46"
+#define MM_VERSTRING "$VER:AMR2159-832"
 #define MM_YEAR 2021
-#define MM_MONTH 04
-#define MM_DAY 05
-#define MM_WEEKDAY 1
+#define MM_MONTH 05
+#define MM_DAY 09
+#define MM_WEEKDAY 0

@@ -20,7 +20,8 @@ module minimig_virtual_top
     parameter haveaudio = 1,
     parameter havec2p = 1,
     parameter havespirtc = 0,
-    parameter havei2c = 0)
+    parameter havei2c = 0,
+    parameter havevpos = 0)
 (
   // clock inputs
   input wire            CLK_IN,
@@ -98,6 +99,11 @@ module minimig_virtual_top
     input                 SDA_I, // Clock in
     output                SDA_O, // Clock out
     output                SDA_T, // Clock tristate
+  `endif
+
+  `ifdef MINIMIG_VPOS
+    // Video scaler positions
+    output    [ 16-1:0]   VPOS_DATA,
   `endif
 
   // SPI
@@ -862,8 +868,12 @@ EightThirtyTwo_Bridge #( debug ? 1'b1 : 1'b0) hostcpu
 );
 
 
-cfide #(.spimux(spimux ? 1'b1 : 1'b0), .havespirtc(havespirtc ? 1'b1 : 1'b0), .havei2c(havei2c ? 1'b1 : 1'b0)) mycfide
-(
+cfide #(
+  .spimux(spimux ? 1'b1 : 1'b0),
+  .havespirtc(havespirtc ? 1'b1 : 1'b0),
+  .havei2c(havei2c ? 1'b1 : 1'b0),
+  .havevpos(havevpos ? 1'b1 : 1'b0)
+) mycfide (
     .sysclk(CLK_114),
     .n_reset(reset_out),
 
@@ -913,6 +923,11 @@ cfide #(.spimux(spimux ? 1'b1 : 1'b0), .havespirtc(havespirtc ? 1'b1 : 1'b0), .h
       .sda_i(SDA_I),
       .sda_o(SDA_O),
       .sda_t(SDA_T),
+    `endif
+
+    `ifdef MINIMIG_VPOS
+      // Video v and h offset
+      .pos_data_q(VPOS_DATA),
     `endif
 
     .clk_28(CLK_28),

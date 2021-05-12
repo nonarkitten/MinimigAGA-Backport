@@ -87,6 +87,7 @@ const char *config_chipset_msg[] = {"OCS-A500", "OCS-A1000", "ECS", "---", "---"
 const char *config_turbo_msg[] = {"none", "CHIPRAM", "KICK", "BOTH"};
 const char *config_cd32pad_msg[] =  {"OFF", "ON"};
 const char *config_volume_msg[] = {" "," 1"," 2"," 3"," 4"," 5"," 6"," 7"," 8"," 9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31"};
+const char *config_videopos_msg[] = {"  0","  8"," 16"," 24"," 32"," 48"," 56"," 64"," 72"," 80"," 88"," 96","104","112","120","128","136","144","152","160","168","176","184","192","200","208", "216", "224", "232", "240", "248", "256"};
 
 char *config_autofire_msg[] = {"        AUTOFIRE OFF", "        AUTOFIRE FAST", "        AUTOFIRE MEDIUM", "        AUTOFIRE SLOW"};
 
@@ -1357,7 +1358,7 @@ void HandleUI(void)
         }
         else if (left)
         {
-            menustate = MENU_SETTINGS_VIDEO1;
+            menustate = MENU_SETTINGS_VIDEO3;
             menusub = 0;
         }
         break;
@@ -1897,12 +1898,92 @@ void HandleUI(void)
         }
         else if (right)
         {
-            menustate = MENU_SETTINGS_CHIPSET1;
+            //menustate = MENU_SETTINGS_CHIPSET1;
+			menustate = MENU_SETTINGS_VIDEO3;
             menusub = 0;
         }
         else if (left)
         {
             menustate = MENU_SETTINGS_AUDIO1;
+            menusub = 0;
+        }
+        break;
+
+        /******************************************************************/
+        /* video output settings menu                                     */
+        /******************************************************************/
+    case MENU_SETTINGS_VIDEO3:
+        OsdColor(OSDCOLOR_SUBMENU);
+		menumask=0x1f;
+		parentstate=menustate;
+		helptext=helptexts[HELPTEXT_VIDEO];
+ 
+		OsdSetTitle("Video Pos",OSD_ARROW_LEFT|OSD_ARROW_RIGHT);
+        strcpy(s, " Hpos : ");
+        strcat(s, config_videopos_msg[config.videopos.hpos >> 3]);
+        strcat(s, " | Vpos : ");
+        strcat(s, config_videopos_msg[config.videopos.vpos >> 3]);
+        OsdWrite(0, s,0,0);
+        OsdWrite(1, " --- ", 0,0);
+        OsdWrite(2, "   HPOS +", menusub == 0,0);
+        OsdWrite(3, "   HPOS -", menusub == 1,0);
+        OsdWrite(4, " --- ", 0,0);
+        OsdWrite(5, "   VPOS +", menusub == 2,0);
+        OsdWrite(6, "   VPOS -", menusub == 3,0);
+        OsdWrite(7, STD_BACK, menusub == 4,0);
+
+        menustate = MENU_SETTINGS_VIDEO4;
+        break;
+
+    case MENU_SETTINGS_VIDEO4 :
+        if (select)
+        {
+			if (menusub == 0)
+			{
+				config.videopos.hpos = (config.videopos.hpos + 0x08);
+				menustate = MENU_SETTINGS_VIDEO3;
+				ConfigVideoPos(config.videopos.hpos, config.videopos.vpos);
+			}
+			else if (menusub == 1)
+			{
+				config.videopos.hpos = (config.videopos.hpos - 0x08);
+				menustate = MENU_SETTINGS_VIDEO3;
+				ConfigVideoPos(config.videopos.hpos, config.videopos.vpos);
+			}
+			else if (menusub == 2)
+			{
+				config.videopos.vpos = (config.videopos.vpos + 0x08);
+				menustate = MENU_SETTINGS_VIDEO3;
+				ConfigVideoPos(config.videopos.hpos, config.videopos.vpos);
+			}
+			else if (menusub == 3)
+			{
+				config.videopos.vpos = (config.videopos.vpos - 0x08);
+				menustate = MENU_SETTINGS_VIDEO3;
+				ConfigVideoPos(config.videopos.hpos, config.videopos.vpos);
+			}
+
+            else if (menusub == 4)
+            {
+                menustate = MENU_MAIN2_1;
+                menusub = 4;
+            }
+        }
+
+        if (menu)
+        {
+            menustate = MENU_MAIN2_1;
+            menusub = 4;
+        }
+        else if (right)
+        {
+            //menustate = MENU_SETTINGS_CHIPSET1;
+			menustate = MENU_SETTINGS_CHIPSET1;
+            menusub = 0;
+        }
+        else if (left)
+        {
+            menustate = MENU_SETTINGS_VIDEO1;
             menusub = 0;
         }
         break;

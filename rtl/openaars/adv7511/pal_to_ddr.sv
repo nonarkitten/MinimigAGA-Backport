@@ -27,7 +27,9 @@ module pal_to_ddr(
         input [7:0] i_pal_r,
         input [7:0] i_pal_g,
         input [7:0] i_pal_b,
-
+        // Offset
+        input [7:0] i_hoffset,
+        input [7:0] i_voffset,
         // OUTPUT
         output o_clk_pixel,    // Output pixel clock after synchronization to clk_ddr
         output o_de,            // Data enable signal
@@ -60,7 +62,6 @@ module pal_to_ddr(
     wire [7:0] w_o_g;
     wire [7:0] w_o_b;
 
-
     reg _i_pal_hsync;
     reg __i_pal_hsync;
     reg _i_pal_vsync;
@@ -71,6 +72,9 @@ module pal_to_ddr(
     reg [7:0] __i_pal_g;
     reg [7:0] _i_pal_b;
     reg [7:0] __i_pal_b;
+
+    reg [7:0] r_hoffset [0:1];
+    reg [7:0] r_voffset [0:1];
 
     // Synchronize the signal
     always @(posedge clk) begin
@@ -89,6 +93,9 @@ module pal_to_ddr(
         // Blue
         _i_pal_b      <= i_pal_b;
         __i_pal_b     <= _i_pal_b;
+        // Offset registers
+        r_hoffset     <= {r_hoffset[1], i_hoffset};
+        r_voffset     <= {r_voffset[1], i_voffset};
     end
 
     // Upscale the video signal using a line buffer
@@ -112,7 +119,10 @@ module pal_to_ddr(
         .i_hd_hsync(o_hsync),
         .i_hd_vsync(w_hd_vsync),
         .i_hd_clk(w_adv_clk),
-        .i_hd_four_three(1'b0)
+        .i_hd_four_three(1'b0),
+        // horizontal and vertical offsets
+        .i_hd_hoffset(r_hoffset[0]),
+        .i_hd_voffset(r_voffset[0])
     );
 
     // Generate the 720p Hsync and Vsync signals

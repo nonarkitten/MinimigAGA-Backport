@@ -41,11 +41,14 @@ module pal_to_hd_upsample(
     input           i_hd_hsync,
     input           i_hd_vsync,
     input           i_hd_clk,
-    input           i_hd_four_three     // Display content as 4:3 (1) instead of 16:9 (0)
+    input           i_hd_four_three,    // Display content as 4:3 (1) instead of 16:9 (0)
+    // Horizontal and Vertical offsets
+    input [7:0]     i_hd_hoffset,
+    input [7:0]     i_hd_voffset
 );
     // constants
-    parameter OFFSET_HZ = 0;    // Number of pixels offset to center the screen horizontally (Higher is more to the left)
-    parameter OFFSET_VT = 32;   // Number of Lines to center the screen vertically (NOT IMPLEMENTED YET)
+    parameter OFFSET_HZ = 'h80;    // Number of pixels offset to center the screen horizontally (Higher is more to the right)
+    parameter OFFSET_VT = 0;   // Number of Lines to center the screen vertically (NOT IMPLEMENTED YET)
     parameter HD_H_RES  = 1360; // Resolution of the output signal
     parameter HD_H_FP   = 0;    // Horizontal front porge, move image to the right
     parameter HD_FT_BAR = 160;  // The width of the bar before and after the active area when in 4:3 mode
@@ -250,21 +253,21 @@ module pal_to_hd_upsample(
             r_h_pos <= 0; // Reset horizontal counter
             case (r_cur_read_buf)
                 0:
-                    r_addrb <= 14'h0000 + OFFSET_HZ;
+                    r_addrb <= 14'h0000 - OFFSET_HZ + i_hd_hoffset;
                 1:
-                    r_addrb <= 14'h0800 + OFFSET_HZ;
+                    r_addrb <= 14'h0800 - OFFSET_HZ + i_hd_hoffset;
                 2:
-                    r_addrb <= 14'h1000 + OFFSET_HZ;
+                    r_addrb <= 14'h1000 - OFFSET_HZ + i_hd_hoffset;
                 3:
-                    r_addrb <= 14'h1800 + OFFSET_HZ;
+                    r_addrb <= 14'h1800 - OFFSET_HZ + i_hd_hoffset;
                 4:
-                    r_addrb <= 14'h2000 + OFFSET_HZ;
+                    r_addrb <= 14'h2000 - OFFSET_HZ + i_hd_hoffset;
                 5:
-                    r_addrb <= 14'h2800 + OFFSET_HZ;
+                    r_addrb <= 14'h2800 - OFFSET_HZ + i_hd_hoffset;
                 6:
-                    r_addrb <= 14'h3000 + OFFSET_HZ;
+                    r_addrb <= 14'h3000 - OFFSET_HZ + i_hd_hoffset;
                 7:
-                    r_addrb <= 14'h3800 + OFFSET_HZ;
+                    r_addrb <= 14'h3800 - OFFSET_HZ + i_hd_hoffset;
             endcase
         end
 
@@ -311,7 +314,7 @@ module pal_to_hd_upsample(
         .reset(reset),
         .pix_en(r_pix_en),      // Pixel clock
         .i_vsync(i_hd_vsync),   // Original Vsync signal
-        .v_trans(OFFSET_VT),    // Number of lines to translate the vsync down
+        .v_trans(i_hd_voffset + OFFSET_VT),    // Number of lines to translate the vsync down
         .o_vsync(o_hd_vsync)    // Delayed HD vsync signal
     );
 endmodule

@@ -38,6 +38,12 @@ typedef struct
 
 typedef struct
 {
+  unsigned char hpos;
+  unsigned char vpos;
+} videoPosTYPE;
+
+typedef struct
+{
   char          id[8];
   unsigned long version;
   kickstartTYPE kickstart;
@@ -64,6 +70,7 @@ typedef struct
 	unsigned long hdfdir[4]; // Directory for HDF files.  Space for expansion to four devices.
   hardfileTYPE  secondaryhardfile[2]; // hardfile entries for potential secondary IDE devices.
   audioTYPE     audio;
+  videoPosTYPE  videopos;
 } configTYPE;
 
 extern fileTYPE file;	// Temporary file available for use by other modules, to avoid repeated memory usage.

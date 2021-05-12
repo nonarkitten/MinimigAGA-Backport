@@ -139,6 +139,8 @@ wire        vga_vs;
 wire [7:0]  vga_r;
 wire [7:0]  vga_g;
 wire [7:0]  vga_b;
+wire [7:0]  hoffset;
+wire [7:0]  voffset;
 
 // SDRAM 
 wire [15:0] sdram_dq;
@@ -191,6 +193,9 @@ wire        dv_scl_o;
 wire        dv_sda_i;
 wire        dv_sda_t;
 wire        dv_sda_o;
+
+// Display scaler
+wire [15:0] vpos_data;
 
 ////////////////////////////////////////
 // toplevel assignments               //
@@ -356,6 +361,9 @@ pal_to_ddr my_pal_to_ddr (
   .i_pal_r(vga_r),
   .i_pal_g(vga_g),
   .i_pal_b(vga_b),
+  // Video offset
+  .i_hoffset(hoffset),
+  .i_voffset(voffset),
   //.i_pal_pixel(vga_pixel),
   //.i_pal_cs(vga_cs),
   // Output HDMI
@@ -372,7 +380,8 @@ minimig_virtual_top
   .havertg(1'b0),
   .haveaudio(1'b1),
   .havec2p(1'b0),
-  .havei2c(1'b1)
+  .havei2c(1'b1),
+  .havevpos(1'b1)
 ) openaars_virtual_top (
   .CLK_IN(clk_50),
   .CLK_28(clk_28),
@@ -433,7 +442,12 @@ minimig_virtual_top
   .SCL_T(scl_t),
   .SDA_I(sda_i),
   .SDA_O(sda_o),
-  .SDA_T(sda_t)
+  .SDA_T(sda_t),
+  .VPOS_DATA(vpos_data)
 );
+
+// Assign video position data
+assign hoffset = vpos_data[7:0];
+assign voffset = vpos_data[15:8];
 
 endmodule

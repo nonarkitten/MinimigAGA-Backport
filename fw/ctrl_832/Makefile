@@ -73,7 +73,7 @@ all: bootcustominit.h version.h $(PROJECT).bin
 force:
 
 version.h: force
-	echo >version.h \#define MM_FIRMWARE_VERSION \"`date +%Y-%-m-%-d`\"
+	echo >version.h \#define MM_FIRMWARE_VERSION \"`date +%Y-%-m-%-d-%-H-%-M`\"
 	echo >>version.h \#define MM_VERSTRING \"\$$VER:AMR`date +%y%-m%-d`-832\"
 	echo >>version.h \#define MM_YEAR `date +%Y`
 	echo >>version.h \#define MM_MONTH `date +%m`

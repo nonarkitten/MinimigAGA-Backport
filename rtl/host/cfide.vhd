@@ -31,7 +31,8 @@ entity cfide is
 	generic (
 		spimux : in boolean;
 		havespirtc : in boolean;
-		havei2c : in boolean
+		havei2c : in boolean;
+		havevpos : in boolean
 	);
    port (
 		sysclk	: in std_logic;
@@ -83,6 +84,9 @@ entity cfide is
 		sda_o : out std_logic;
 		sda_t : out std_logic;
 
+		-- Video scaler coordinates
+		pos_data_q : out std_logic_vector(15 downto 0);
+
 		-- 28Mhz signals
 		clk_28	: in std_logic;
 		tick_in : in std_logic	-- 44.1KHz - makes it easy to keep timer in lockstep with audio.
@@ -109,7 +113,7 @@ signal IOcpuena: std_logic;
 
 type support_states is (idle, io_aktion);
 signal support_state		: support_states;
-signal next_support_state		: support_states;
+--signal next_support_state		: support_states;
 
 signal sd_out	: std_logic_vector(15 downto 0);
 signal sd_in	: std_logic_vector(15 downto 0);
@@ -128,7 +132,7 @@ signal spi_wait_d : std_logic;
 signal timecnt: std_logic_vector(23 downto 0);
 
 signal rs232_select : std_logic;
-signal rs232data : std_logic_vector(15 downto 0);
+--signal rs232data : std_logic_vector(15 downto 0);
 
 signal audio_q : std_logic_vector(15 downto 0);
 signal audio_select : std_logic;
@@ -143,6 +147,7 @@ signal amiga_req_d : std_logic;
 
 signal rtc_select : std_logic;
 signal i2c_select : std_logic;
+signal videoscl_select : std_logic;
 signal i2c_int    : std_logic;
 signal spirtcpresent : std_logic;
 
@@ -150,16 +155,11 @@ signal reset : std_logic;
 
 
 attribute MARK_DEBUG : string;
-attribute MARK_DEBUG of i2c_select : signal is "TRUE";
-attribute MARK_DEBUG of I2Cdata : signal is "TRUE";
+attribute MARK_DEBUG of pos_data_q : signal is "TRUE";
 attribute MARK_DEBUG of d : signal is "TRUE";
 attribute MARK_DEBUG of req : signal is "TRUE";
-attribute MARK_DEBUG of scl_i : signal is "TRUE";
-attribute MARK_DEBUG of scl_o : signal is "TRUE";
-attribute MARK_DEBUG of scl_t : signal is "TRUE";
-attribute MARK_DEBUG of sda_i : signal is "TRUE";
-attribute MARK_DEBUG of sda_o : signal is "TRUE";
-attribute MARK_DEBUG of sda_t : signal is "TRUE";
+attribute MARK_DEBUG of videoscl_select : signal is "TRUE";
+attribute MARK_DEBUG of wr : signal is "TRUE";
 attribute MARK_DEBUG of addr : signal is "TRUE";
 
 begin
@@ -212,6 +212,7 @@ keyboard_select <='1' when addr(23)='1' and addr(7 downto 4)=X"9" else '0';
 amiga_select <= '1' when addr(23)='1' and addr(7 downto 4)=X"8" else '0';
 rtc_select <= '1' when addr(23)='1' and addr(7 downto 4)=X"7" else '0';
 i2c_select <= '1' when addr(23)='1' and addr(7 downto 4)=X"6" else '0';
+videoscl_select <= '1' when addr(23)='1' and addr(7 downto 4)=X"5" else '0';
 
 
 -- RTC handling at 0fffff70
@@ -556,6 +557,18 @@ my_i2c_mmio: entity work.i2c_master_mmio port map (
 
 end generate;
 
+vpos_interface: if (havevpos) generate
+
+	process(clk_28)
+	begin
+		if rising_edge(clk_28) then
+			if videoscl_select='1' and wr='1' then
+				pos_data_q <= d(15 downto 0);
+			end if;
+		end if;
+	end process;
+
+end generate;
 
 -----------------------------------------------------------------
 -- timer

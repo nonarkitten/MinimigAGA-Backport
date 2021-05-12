@@ -95,6 +95,9 @@
 #define SPI_RST_CPU         0x2
 #define SPI_CPU_HLT         0x4
 
+// 15kHz to HDMI Video position
+#define VIDEOSCALE (*(volatile unsigned int *)0x0fffff50)
+#define VIDEOSCALE_SET_POS (VIDEOSCALE)
 
 //void USART_Init(unsigned long baudrate);
 //void USART_Write(unsigned char c);
