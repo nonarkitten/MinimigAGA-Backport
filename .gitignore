@@ -50,3 +50,4 @@ xvhdl.*
 .vscode/*
 vivado*
 fw/ctrl_832/*.asm
+fw/ctrl_832/swoopBuf
