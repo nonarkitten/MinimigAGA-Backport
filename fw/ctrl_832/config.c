@@ -430,6 +430,7 @@ int ApplyConfiguration(char reloadkickstart, char applydrives)
     ConfigChipset(config.chipset);
     ConfigFloppy(config.floppy.drives, config.floppy.speed);
     ConfigVideo(config.filter.hires, config.filter.lores, config.scanlines);
+	ConfigVideoPos(config.videopos.hpos, config.videopos.vpos);
     ConfigMisc(config.misc);
 
     if(reloadkickstart) {
