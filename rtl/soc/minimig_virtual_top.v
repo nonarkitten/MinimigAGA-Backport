@@ -44,7 +44,7 @@ module minimig_virtual_top
   input wire            AMIGA_RX,    // UART Receiver
 
   // VGA
-  output wire     VGA_PIXEL,  // high pulse for each new pixel
+  output wire           VGA_PIXEL,  // high pulse for each new pixel
   output wire           VGA_SELCS,  // Select CSYNC
   output wire           VGA_CS,     // VGA C_SYNC
   output wire           VGA_HS,     // VGA H_SYNC
@@ -112,7 +112,7 @@ module minimig_virtual_top
   output wire           SD_CLK,
   output wire           SD_CS,
   input wire            SD_ACK,
-  output wire           RTC_CS
+  output wire           rTC_CS
 );
 
 
@@ -800,7 +800,7 @@ minimig #(
   .sdo          (SPI_DO           ),  // SPI data output
   .sck          (SPI_SCK          ),  // SPI clock
   //video
-  .selcsync     (VGA_SELCS        ),
+  .selcsync     (VGA_SELCS        ),  // composite sync
   ._csync       (cs               ),  // horizontal sync
   ._hsync       (hs               ),  // horizontal sync
   .hsyncpol     (hsyncpol         ),
