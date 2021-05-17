@@ -252,16 +252,18 @@ assign uart3_txd = amiga_tx;
 ////////////////////////////////////////
 // HDMI Clock                         //
 ////////////////////////////////////////
-MMCME2_BASE #(
-  .CLKIN1_PERIOD(20.0),   // 50      MHz (10 ns)
-  .CLKFBOUT_MULT_F(32.2932), // 1614.66  MHz 
-  .DIVCLK_DIVIDE(2),      // 807.33    MHz /2 common divide
-  .CLKOUT0_DIVIDE_F(4),   // 201.8325    MHz /4 divide
-  .BANDWIDTH("LOW")
+PLLE2_BASE #(
+  .BANDWIDTH("OPTIMIZED"),
+  .CLKFBOUT_MULT(35),       // 980  MHz 
+  .CLKFBOUT_PHASE(0.000),   // No offset
+  .CLKIN1_PERIOD(35.714),   // 28      MHz (10 ns)
+  .CLKOUT0_DIVIDE(5),       // 196    MHz /4 divide
+  .DIVCLK_DIVIDE(1),
+  .REF_JITTER1(0.010)
 ) clk_hdmi (
   .PWRDWN(1'b0),
   .RST(1'b0),
-  .CLKIN1(clk_50),
+  .CLKIN1(vga_pixel),
   .CLKFBIN(clk_fb_main),
   .CLKFBOUT(clk_fb_main),
   .CLKOUT0(clk_200),        //  200 MHz HDMI base clock
@@ -288,7 +290,7 @@ gen_reset #(
   .resetCycles(524284)
 ) myReset (
   .clk(clk_50),
-  .enable(pll_locked_main),
+  .enable(1'b1),
   .button(!sys_reset_in),
   .nreset(reset_n_50)
 );
