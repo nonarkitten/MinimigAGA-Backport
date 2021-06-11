@@ -103,14 +103,47 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ## Building minimig-mist from sources
 
 * checkout the source 
-* download / install [Altera Quartus II](https://dl.altera.com/?edition=web) (latest supported version for Cyclone III FPGA device used on the MiST board is 13.1; I'm still using version 10.1SP1)
-* build the core using Quartus GUI (project file in fpga/mist)
-* place the minimig-mist.rbf files on the root of your SD card (optionally, rename minimig-mist.rbf to core.rbf to make it the default core)
-* don't forget to place kickstart ROM of your choosing on the root of the SD card (these are still copyrighted, so either copy the ROM from your real Amiga, or buy AmigaForever)
-* place some ADF (floppy disk images) of your favourite games / demos / programs on your SD card
-* optionally place minimig.bal, minimig.art & minimig.cop files on the root of your SD card for a nice bootup animation
-* enjoy minimig! :)
+* cd into the project directory
+* Make sure vivado settings64.sh has been sourced into the shell ``source <vivado home>/Vivado/2020.2/settings64.sh``
+* run 'rebuild.sh'
+* Open the project in Vivado, proceed with the build by pressing 'Generate bitstream'
+* wait until the status in the top right corner indicates that the build is finished
+* in 'PROGRAM AND DEBUG', unfold 'Open Hardware Manager'
+* click 'Open Target' (Make sure the FPGA is connected via the programmer at this point)
+* select 'auto connect'
 
+## Building firmware
+
+First build the compiler and patch it.
+Luckily there is a Makefile making the process simpler.
+
+```bash
+cd EightThirtyTwo
+make
+<Some output>
+cd ..
+```
+
+After that build the firmware itself.
+The build process yields a file called: 832OSDAD.BIN
+The 832OSDAD.BIN is copied to the micro sd card the Open AARS boots from.
+
+```bash
+cd fw/ctrl_832
+make
+cp 832OSDAD.bin <root of sd card>/832OSDAD.BIN
+```
+
+Files needed for the Open AARS to boot
+
+|name|description|
+|---|---|
+|832OSDAD.BIN|Firmware responsible for the On screen display|
+|kick.rom|Default kickstart rom|
+|hrtmon.rom*|Hardware monitor rom|
+|rom.key*|If Amiga Forever rom files are used, this key file is needed|
+|minimig.art*|Spining ball logo at boot time|
+|hardfile.hdf|Harddisk image, can be created using UAE|
 
 ## Sources
 
