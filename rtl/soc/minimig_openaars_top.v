@@ -254,16 +254,16 @@ assign uart3_txd = amiga_tx;
 ////////////////////////////////////////
 PLLE2_BASE #(
   .BANDWIDTH("OPTIMIZED"),
-  .CLKFBOUT_MULT(35),       // 980  MHz 
+  .CLKFBOUT_MULT(20),       // 1000  MHz 
   .CLKFBOUT_PHASE(0.000),   // No offset
-  .CLKIN1_PERIOD(35.714),   // 28      MHz (10 ns)
-  .CLKOUT0_DIVIDE(5),       // 196    MHz /4 divide
+  .CLKIN1_PERIOD(20),       // 50      MHz (20 ns)
+  .CLKOUT0_DIVIDE(5),       // 200    MHz /4 divide
   .DIVCLK_DIVIDE(1),
   .REF_JITTER1(0.010)
 ) clk_hdmi (
   .PWRDWN(1'b0),
   .RST(1'b0),
-  .CLKIN1(vga_pixel),
+  .CLKIN1(clk_50),
   .CLKFBIN(clk_fb_main),
   .CLKFBOUT(clk_fb_main),
   .CLKOUT0(clk_200),        //  200 MHz HDMI base clock
