@@ -11,6 +11,12 @@ reg [3:0] ram[(2**9)-1:0] /* synthesis ramstyle = "auto" */;
 // Set to "logic" if you don't want to use a RAM block for this.
 integer j;
 
+localparam z2base='h00;
+localparam z3base='h40;
+localparam z3base2='h80;
+localparam z3base3='hc0;
+localparam ethbase='h100;
+
 initial
 begin
 
@@ -24,53 +30,71 @@ begin
 
 	// Up to 8 meg of 24-bit Fast RAM
 	
-	ram['h00+'h0] = 4'b1110;	// Zorro-II card, add mem, no ROM
-	ram['h00+'h2/2] = 4'b0000;	// 0110 => 2MB, 0111 => 4MB, 0000 => 8MB
-	ram['h00+'h10/2] = 4'b1110;	// Manufacturer ID: 0x139c
-	ram['h00+'h12/2] = 4'b1100;
-	ram['h00+'h14/2] = 4'b0110;
-	ram['h00+'h16/2] = 4'b0011;
-	ram['h00+'h26/2] = 4'b1110;	// Serial no: 1
+	ram[z2base+'h0] = 4'b1110;	// Zorro-II card, add mem, no ROM
+	ram[z2base+'h2/2] = 4'b0000;	// 0110 => 2MB, 0111 => 4MB, 0000 => 8MB
+	ram[z2base+'h10/2] = 4'b1110;	// Manufacturer ID: 0x139c
+	ram[z2base+'h12/2] = 4'b1100;
+	ram[z2base+'h14/2] = 4'b0110;
+	ram[z2base+'h16/2] = 4'b0011;
+	ram[z2base+'h26/2] = 4'b1110;	// Serial no: 1
 
+	
 	// 16 meg of 32-bit Fast RAM
 
-	ram['h40+'h0] = 4'b1010;	// Zorro-III card, add mem, no ROM
-	ram['h40+'h2/2] = 4'b0000;	// 8MB (extended to 16 in reg 08
-	ram['h40+'h4/2] = 4'b1110;	// ProductID = 0x10 (only setting upper nybble)
-	ram['h40+'h8/2] = 4'b0000;	// Memory card, not silenceable, extended size (16 meg), reserved
-	ram['h40+'ha/2] = 4'b1111;	// 0000 - logical size matches physical size
-	ram['h40+'h10/2] = 4'b1110;	// Manufacturer ID: 0x139c
-	ram['h40+'h12/2] = 4'b1100;
-	ram['h40+'h14/2] = 4'b0110;
-	ram['h40+'h16/2] = 4'b0011;
-	ram['h40+'h26/2] = 4'b1101;	// Serial no: 2
+	ram[z3base+'h0] = 4'b1010;	// Zorro-III card, add mem, no ROM
+	ram[z3base+'h2/2] = 4'b0000;	// 8MB (extended to 16 in reg 08)
+	ram[z3base+'h4/2] = 4'b1110;	// ProductID = 0x10 (only setting upper nybble)
+	ram[z3base+'h8/2] = 4'b0000;	// Memory card, not silenceable, extended size (16 meg), reserved
+	ram[z3base+'ha/2] = 4'b1111;	// 0000 - logical size matches physical size
+	ram[z3base+'h10/2] = 4'b1110;	// Manufacturer ID: 0x139c
+	ram[z3base+'h12/2] = 4'b1100;
+	ram[z3base+'h14/2] = 4'b0110;
+	ram[z3base+'h16/2] = 4'b0011;
+	ram[z3base+'h26/2] = 4'b1101;	// Serial no: 2
+	
+	
+	// Extra 32 meg of RAM for 64-meg platforms
+
+	ram[z3base2+'h0] = 4'b1010;	// Zorro-III card, add mem, no ROM
+	ram[z3base2+'h2/2] = 4'b0001;	// 64kb (extended to 32 meg in reg 08)
+	ram[z3base2+'h4/2] = 4'b1110;	// ProductID = 0x11
+	ram[z3base2+'h6/2] = 4'b1110;	// ProductID = 0x11
+	ram[z3base2+'h8/2] = 4'b0000;	// Memory card, not silenceable, extended size (16 meg), reserved
+	ram[z3base2+'ha/2] = 4'b1111;	// 0000 - logical size matches physical size
+	ram[z3base2+'h10/2] = 4'b1110;	// Manufacturer ID: 0x1399
+	ram[z3base2+'h12/2] = 4'b1100;
+	ram[z3base2+'h14/2] = 4'b0110;
+	ram[z3base2+'h16/2] = 4'b0110;
+	ram[z3base2+'h26/2] = 4'b1011;	// Serial no: 4
+
 
 	// 2 or 4 meg of 32-bit Fast RAM (unused RAM in Bank 0)
 
-	ram['h80+'h0] = 4'b1010;	// Zorro-III card, add mem, no ROM
-	ram['h80+'h2/2] = 4'b0111;	// 4MB
-	ram['h80+'h4/2] = 4'b1110;	// ProductID = 0x11
-	ram['h80+'h6/2] = 4'b1110;	// ProductID = 0x11
-	ram['h80+'h8/2] = 4'b0010;	// Memory card, not silenceable, reserved
-	ram['h80+'ha/2] = 4'b1000;	// 0111 - 2 meg
-	ram['h80+'h10/2] = 4'b1110;	// Manufacturer ID: 0x1399
-	ram['h80+'h12/2] = 4'b1100;
-	ram['h80+'h14/2] = 4'b0110;
-	ram['h80+'h16/2] = 4'b0110;
-	ram['h80+'h26/2] = 4'b1100;	// Serial no: 3
+	ram[z3base3+'h0] = 4'b1010;	// Zorro-III card, add mem, no ROM
+	ram[z3base3+'h2/2] = 4'b0111;	// 4MB
+	ram[z3base3+'h4/2] = 4'b1110;	// ProductID = 0x11
+	ram[z3base3+'h6/2] = 4'b1110;	// ProductID = 0x11
+	ram[z3base3+'h8/2] = 4'b0010;	// Memory card, not silenceable, reserved
+	ram[z3base3+'ha/2] = 4'b1000;	// 0111 - 2 meg
+	ram[z3base3+'h10/2] = 4'b1110;	// Manufacturer ID: 0x1399
+	ram[z3base3+'h12/2] = 4'b1100;
+	ram[z3base3+'h14/2] = 4'b0110;
+	ram[z3base3+'h16/2] = 4'b0110;
+	ram[z3base3+'h26/2] = 4'b1100;	// Serial no: 3
+
 
 	// Ethernet
 	
-	ram['hc0+'h0] = 4'b1000;	// Zorro-III card, no link, no ROM
-	ram['hc0+'h2/2] = 4'b0001;	// Next board not related, size 'h40k
-	ram['hc0+'h4/2] = 4'b1101;	// ProductID = 0x20 (only setting upper nybble)
-	ram['hc0+'h8/2] = 4'b1110;	// Not memory, silenceable, normal size, Zorro III
-	ram['hc0+'ha/2] = 4'b1101;	// logical size 'h40k
-	ram['hc0+'h10/2] = 4'b1110;	// Manufacturer ID: 0x139c
-	ram['hc0+'h12/2] = 4'b1100;
-	ram['hc0+'h14/2] = 4'b0110;
-	ram['hc0+'h16/2] = 4'b0011;
-	ram['hc0+'h26/2] = 4'b1100;	// Serial no: 3
+	ram[ethbase+'h0] = 4'b1000;	// Zorro-III card, no link, no ROM
+	ram[ethbase+'h2/2] = 4'b0001;	// Next board not related, size 'h40k
+	ram[ethbase+'h4/2] = 4'b1101;	// ProductID = 0x20 (only setting upper nybble)
+	ram[ethbase+'h8/2] = 4'b1110;	// Not memory, silenceable, normal size, Zorro III
+	ram[ethbase+'ha/2] = 4'b1101;	// logical size 'h40k
+	ram[ethbase+'h10/2] = 4'b1110;	// Manufacturer ID: 0x139c
+	ram[ethbase+'h12/2] = 4'b1100;
+	ram[ethbase+'h14/2] = 4'b0110;
+	ram[ethbase+'h16/2] = 4'b0011;
+	ram[ethbase+'h26/2] = 4'b1100;	// Serial no: 3
 	
 end
 

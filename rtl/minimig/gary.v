@@ -73,7 +73,7 @@ module gary
 
 	input	[3:0] memory_config,	//selected memory configuration
 	input	ecs,					//ECS chipset enable
-	input	hdc_ena,				//enables hdd interface
+	input	[1:0] hdc_ena,			//enables hdd interface
 
 	output	ram_rd,					//bus read
 	output	ram_hwr,				//bus high write
@@ -161,7 +161,7 @@ assign t_sel_slow[2] = &memory_config[3:2] && cpu_address_in[23:19]==5'b1101_0; 
 // 512kb extra rom area at $e0 and $f0 write able only at a1k chipset mode
 //assign t_sel_slow[2] = (cpu_address_in[23:19]==5'b1110_0 || cpu_address_in[23:19]==5'b1111_0) && (a1k | cpu_rd) ? 1'b1 : 1'b0; //$E00000 - $E7FFFF & $F00000 - $F7FFFF
 
-assign sel_ide = hdc_ena && cpu_address_in[23:16]==8'b1101_1010 ? 1'b1 : 1'b0;		//IDE registers at $DA0000 - $DAFFFF	
+assign sel_ide = |hdc_ena && cpu_address_in[23:16]==8'b1101_1010 ? 1'b1 : 1'b0;		//IDE registers at $DA0000 - $DAFFFF	
 
 assign sel_gayle = hdc_ena && cpu_address_in[23:12]==12'b1101_1110_0001 ? 1'b1 : 1'b0;		//GAYLE registers at $DE1000 - $DE1FFF
 

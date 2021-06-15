@@ -145,7 +145,7 @@ static void FakeRDB(int unit,int block)
 				pb->pb_Environment.de_LowCyl=1;
 				pb->pb_Environment.de_HighCyl=hdf[unit].cylinders-1;
 				pb->pb_Environment.de_NumBuffers=30;
-				pb->pb_Environment.de_MaxTransfer=0xffffff;
+				pb->pb_Environment.de_MaxTransfer=0x1fffe;
 				pb->pb_Environment.de_Mask=0x7ffffffe;
 				pb->pb_Environment.de_DosType=0x444f5301;
 

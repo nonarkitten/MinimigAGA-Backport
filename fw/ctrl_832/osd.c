@@ -931,6 +931,7 @@ void ConfigAutofire(unsigned char autofire)
     DisableOsd();
 }
 
+
 // get key status
 unsigned char OsdGetCtrl(void)
 {

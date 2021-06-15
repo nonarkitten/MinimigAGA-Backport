@@ -19,7 +19,7 @@ module cpu_cache_new (
   input  wire           cacheline_clr,
   // cpu
   input  wire           cpu_cs,         // cpu activity
-  input  wire [ 25-1:0] cpu_adr,        // cpu address
+  input  wire [ 26-1:0] cpu_adr,        // cpu address
   input  wire [  2-1:0] cpu_bs,         // cpu byte selects
   input  wire           cpu_32bit,      // cpu 32 bit write
   input  wire           cpu_we,         // cpu write
@@ -32,14 +32,14 @@ module cpu_cache_new (
   input  wire [ 16-1:0] sdr_dat_r,      // sdram read data
   output reg            sdr_read_req,   // sdram read request from cache
   input  wire           sdr_read_ack,   // sdram read acknowledge to cache
-  output reg  [ 25-1:1] sdr_adr,        // sdram address
+  output reg  [ 26-1:1] sdr_adr,        // sdram address
   output reg  [ 32-1:0] sdr_dat_w,      // sdram write data
   output reg  [  4-1:0] sdr_dqm_w,      // sdram write byte selects (active low)
   output reg            sdr_write_req,  // sdram write request from cache
   input  wire           sdr_write_ack,  // sdram write acknowledge to cache
   // snoop
   input  wire           snoop_act,      // snoop act (write only - just update existing data in cache)
-  input  wire [ 25-1:0] snoop_adr,      // chip address
+  input  wire [ 26-1:0] snoop_adr,      // chip address
   input  wire [ 32-1:0] snoop_dat_w,    // snoop write data
   input  wire [  4-1:0] snoop_bs        // snoop byte selects
 );
@@ -101,11 +101,11 @@ wire [ 3-1:0] cpu_adr_blk_ptr_next = {cpu_adr_blk_ptr[2:1] + 1'd1, 1'b0};
 wire [ 3-1:0] cpu_adr_blk_ptr_prev = {cpu_adr_blk_ptr[2:1] - 1'd1, 1'b0};
 wire [ 3-1:0] cpu_adr_blk;
 wire [ 8-1:0] cpu_adr_idx;
-wire [13-1:0] cpu_adr_tag;
+wire [14-1:0] cpu_adr_tag;
 // cache line cache
 reg   [8-1:0] cpu_cacheline_lo[0:7];
 reg   [8-1:0] cpu_cacheline_hi[0:7];
-reg  [25-1:4] cpu_cacheline_adr;
+reg  [26-1:4] cpu_cacheline_adr;
 wire          cpu_cacheline_valid;
 reg           cpu_cacheline_dirty;
 reg           cpu_cacheline_match;
@@ -251,9 +251,9 @@ end
 // slice up cpu address
 assign cpu_adr_blk = cpu_adr[3:1];    // cache block address (inside cache row), 3 bits for 8x16 rows
 assign cpu_adr_idx = cpu_adr[11:4];   // cache row address, 8 bits
-assign cpu_adr_tag = cpu_adr[24:12];  // tag, 13 bits
+assign cpu_adr_tag = cpu_adr[25:12];  // tag, 14 bits
 
-always @(posedge clk) cpu_cacheline_match <= cpu_adr[24:4] == cpu_cacheline_adr && !cpu_cacheline_dirty;
+always @(posedge clk) cpu_cacheline_match <= cpu_adr[25:4] == cpu_cacheline_adr && !cpu_cacheline_dirty;
 assign cpu_cacheline_valid = cpu_cacheline_match && (cpu_sm_state == CPU_SM_IDLE) && (cpu_ir || cpu_dr) && !cache_inhibit;
 assign cpu_32bit_ena = cpu_32bit && cpu_cs && write_ena;
 assign cpu_ack = cpu_cache_ack || cpu_cacheline_valid || cpu_32bit_ena;
@@ -314,7 +314,7 @@ always @ (posedge clk) begin
             if (cpu_bs[1]) cpu_cacheline_hi[cpu_adr_blk_ptr] <= #1 cpu_dat_w[15: 8]; //update hi byte
 
             if (write_ena) begin
-              sdr_adr <= #1 cpu_adr[24:1];
+              sdr_adr <= #1 cpu_adr[25:1];
               sdr_dqm_w <= #1 {2'b11, ~cpu_bs};
               sdr_dat_w <= #1 {cpu_dat_w, cpu_dat_w};
               if (cpu_32bit) begin
@@ -383,7 +383,7 @@ always @ (posedge clk) begin
         if (!cpu_cs) cpu_sm_state <= #1 CPU_SM_IDLE;
       end
       CPU_SM_READ : begin
-        cpu_cacheline_adr <= #1 cpu_adr[24:4];
+        cpu_cacheline_adr <= #1 cpu_adr[25:4];
         cpu_cacheline_cnt <= #1 cpu_cacheline_cnt + 1'b1;
         if(cpu_cacheline_cnt == 2'b01) begin
           cpu_cacheline_dirty <= #1 1'b0;
@@ -467,21 +467,21 @@ always @ (posedge clk) begin
             cpu_cacheline_dirty <= #1 1'b1; //invalidate
             cpu_sm_state <= #1 CPU_SM_FILLW;
           end else begin      
-            cpu_cacheline_adr <= #1 cpu_adr[24:4];
+            cpu_cacheline_adr <= #1 cpu_adr[25:4];
             cpu_cacheline_dirty <= #1 1'b0;
 
             // update tag ram
             if (cpu_ir) begin
               if (itag_lru) begin
-                cpu_sm_tag_dat_w <= #1 {1'b0, 1'b1, itram_cpu_dat_r[29], 1'b0, itram_cpu_dat_r[27:14], 1'b0, cpu_adr_tag};
+                cpu_sm_tag_dat_w <= #1 {1'b0, 1'b1, itram_cpu_dat_r[29], 1'b0, itram_cpu_dat_r[27:14], cpu_adr_tag}; // Removed zero bit
               end else begin
-                cpu_sm_tag_dat_w <= #1 {1'b1, itram_cpu_dat_r[30], 1'b1, 1'b0, 1'b0, cpu_adr_tag, itram_cpu_dat_r[13: 0]};
+                cpu_sm_tag_dat_w <= #1 {1'b1, itram_cpu_dat_r[30], 1'b1, 1'b0, cpu_adr_tag, itram_cpu_dat_r[13: 0]}; // Removed zero bit
               end
             end else begin
               if (dtag_lru) begin
-                cpu_sm_tag_dat_w <= #1 {1'b0, 1'b1, dtram_cpu_dat_r[29], 1'b0, dtram_cpu_dat_r[27:14], 1'b0, cpu_adr_tag};
+                cpu_sm_tag_dat_w <= #1 {1'b0, 1'b1, dtram_cpu_dat_r[29], 1'b0, dtram_cpu_dat_r[27:14], cpu_adr_tag}; // Removed zero bit
               end else begin
-                cpu_sm_tag_dat_w <= #1 {1'b1, dtram_cpu_dat_r[30], 1'b1, 1'b0, 1'b0, cpu_adr_tag, dtram_cpu_dat_r[13: 0]};
+                cpu_sm_tag_dat_w <= #1 {1'b1, dtram_cpu_dat_r[30], 1'b1, 1'b0, cpu_adr_tag, dtram_cpu_dat_r[13: 0]}; // Removed zero bit
               end
             end
             cpu_sm_itag_we <= #1  cpu_ir;
@@ -624,8 +624,8 @@ end
 assign itram_cpu_adr    = cpu_adr_idx;
 assign itram_cpu_we     = cpu_sm_itag_we;
 assign itram_cpu_dat_w  = cpu_sm_tag_dat_w;
-assign itag0_match      = (cpu_adr_tag == itram_cpu_dat_r[12:0]);
-assign itag1_match      = (cpu_adr_tag == itram_cpu_dat_r[26:14]);
+assign itag0_match      = (cpu_adr_tag == itram_cpu_dat_r[13:0]);
+assign itag1_match      = (cpu_adr_tag == itram_cpu_dat_r[27:14]);
 assign itag_hit         = itag0_match || itag1_match;
 assign itag_lru         = itram_cpu_dat_r[31];
 assign itag0_valid      = itram_cpu_dat_r[30];
@@ -633,8 +633,8 @@ assign itag1_valid      = itram_cpu_dat_r[29];
 assign itram_sdr_adr    = sdr_sm_adr[9:2];
 assign itram_sdr_we     = sdr_sm_itag_we;
 assign itram_sdr_dat_w  = sdr_sm_tag_dat_w;
-assign sdr_itag0_match  = (snoop_adr[24:12] == itram_sdr_dat_r[12:0]);
-assign sdr_itag1_match  = (snoop_adr[24:12] == itram_sdr_dat_r[26:14]);
+assign sdr_itag0_match  = (snoop_adr[25:12] == itram_sdr_dat_r[13:0]);
+assign sdr_itag1_match  = (snoop_adr[25:12] == itram_sdr_dat_r[27:14]);
 assign sdr_itag_hit     = sdr_itag0_match || sdr_itag1_match;
 assign sdr_itag_lru     = itram_sdr_dat_r[31];
 assign sdr_itag0_valid  = itram_sdr_dat_r[30];
@@ -722,8 +722,8 @@ idram1 (
 assign dtram_cpu_adr    = cpu_adr_idx;
 assign dtram_cpu_we     = cpu_sm_dtag_we;
 assign dtram_cpu_dat_w  = cpu_sm_tag_dat_w;
-assign dtag0_match      = (cpu_adr_tag == dtram_cpu_dat_r[12:0]);
-assign dtag1_match      = (cpu_adr_tag == dtram_cpu_dat_r[26:14]);
+assign dtag0_match      = (cpu_adr_tag == dtram_cpu_dat_r[13:0]);
+assign dtag1_match      = (cpu_adr_tag == dtram_cpu_dat_r[27:14]);
 assign dtag_hit         = dtag0_match || dtag1_match;
 assign dtag_lru         = dtram_cpu_dat_r[31];
 assign dtag0_valid      = dtram_cpu_dat_r[30];
@@ -731,8 +731,8 @@ assign dtag1_valid      = dtram_cpu_dat_r[29];
 assign dtram_sdr_adr    = sdr_sm_adr[9:2];
 assign dtram_sdr_we     = sdr_sm_dtag_we;
 assign dtram_sdr_dat_w  = sdr_sm_tag_dat_w;
-assign sdr_dtag0_match  = (snoop_adr[24:12] == dtram_sdr_dat_r[12:0]);
-assign sdr_dtag1_match  = (snoop_adr[24:12] == dtram_sdr_dat_r[26:14]);
+assign sdr_dtag0_match  = (snoop_adr[25:12] == dtram_sdr_dat_r[13:0]);
+assign sdr_dtag1_match  = (snoop_adr[25:12] == dtram_sdr_dat_r[27:14]);
 assign sdr_dtag_hit     = sdr_dtag0_match || sdr_dtag1_match;
 assign sdr_dtag_lru     = dtram_sdr_dat_r[31];
 assign sdr_dtag0_valid  = dtram_sdr_dat_r[30];

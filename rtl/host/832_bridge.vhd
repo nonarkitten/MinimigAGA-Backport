@@ -30,18 +30,6 @@ end EightThirtyTwo_Bridge;
 
 architecture rtl of EightThirtyTwo_Bridge is
 
--- attribute MARK_DEBUG : string;
--- attribute MARK_DEBUG of addr : signal is "TRUE";
--- attribute MARK_DEBUG of q : signal is "TRUE";
--- attribute MARK_DEBUG of sel : signal is "TRUE";
--- attribute MARK_DEBUG of wr : signal is "TRUE";
--- attribute MARK_DEBUG of ram_req : signal is "TRUE";
--- attribute MARK_DEBUG of ram_ack : signal is "TRUE";
--- attribute MARK_DEBUG of ram_d : signal is "TRUE";
--- attribute MARK_DEBUG of hw_req : signal is "TRUE";
--- attribute MARK_DEBUG of hw_ack : signal is "TRUE";
--- attribute MARK_DEBUG of interrupt : signal is "TRUE";
-
 type bridgestates is (waiting,ram,hw,rom);
 signal state : bridgestates;
 
@@ -124,6 +112,7 @@ port map(
    debug_wr => debug_wr
 );
 
+
 gendebugbridge:
 if debug=true generate
 debugbridge : entity work.debug_bridge_jtag
@@ -138,10 +127,11 @@ port map(
 );
 end generate;
 
+
 bootrom: entity work.OSDBoot_832_ROM
    generic map
    (
-      ADDR_WIDTH => 12
+		maxAddrBitBRAM => 12
    )
    PORT MAP 
    (

@@ -64,6 +64,7 @@ port(
 	ziiram_active : in      std_logic;
 	ziiiram_active : in     std_logic;
 	ziiiram2_active : in     std_logic;
+	ziiiram3_active : in     std_logic;
 
 	eth_en        : in      std_logic:='0';
 	sel_eth       : buffer  std_logic;
@@ -86,7 +87,7 @@ port(
 	CACR_out      : buffer  std_logic_vector(3 downto 0);
 	VBR_out       : buffer  std_logic_vector(31 downto 0);
 	-- RTG interface
-	rtg_addr : out std_logic_vector(24 downto 4);
+	rtg_addr : out std_logic_vector(25 downto 4);
 	rtg_vbend : out std_logic_vector(6 downto 0);
 	rtg_ext : out std_logic;
 	rtg_pixelclock : out std_logic_vector(3 downto 0);
@@ -148,11 +149,13 @@ SIGNAL ramcs            : std_logic;
 SIGNAL z2ram_ena        : std_logic;
 SIGNAL z3ram_ena        : std_logic;
 SIGNAL z3ram2_ena        : std_logic;
+SIGNAL z3ram3_ena        : std_logic;
 SIGNAL eth_base         : std_logic_vector(7 downto 0);
 SIGNAL eth_cfgd         : std_logic;
 SIGNAL sel_z2ram        : std_logic;
 SIGNAL sel_z3ram        : std_logic;
 SIGNAL sel_z3ram2       : std_logic;
+SIGNAL sel_z3ram3       : std_logic;
 SIGNAL sel_kick         : std_logic;
 SIGNAL sel_kickram      : std_logic;
 --SIGNAL sel_eth          : std_logic;
@@ -210,6 +213,7 @@ sel_eth<='0';
 			z2ram_ena <= ziiram_active;
 			z3ram_ena <= ziiiram_active;
 			z3ram2_ena <= ziiiram2_active;
+			z3ram3_ena <= ziiiram3_active;
 
 			sel_akiko_d<=sel_akiko;
 			sel_undecoded_d<=sel_undecoded;
@@ -236,8 +240,12 @@ sel_eth<='0';
 	sel_akiko <= '1' when cpuaddr(31 downto 16)=X"00B8" else '0';
 	sel_32 <= '1' when cpu(1)='1' and cpuaddr(31 downto 24)/=X"00" and cpuaddr(31 downto 24)/=X"ff" else '0'; -- Decode 32-bit space, but exclude interrupt vectors
 --	sel_z3ram       <= '1' WHEN (cpuaddr(31 downto 24)=z3ram_base) else '0'; -- AND z3ram_ena='1' ELSE '0';
-	sel_z3ram       <= '1' WHEN (cpuaddr(31 downto 30)="01") and cpuaddr(24)='0' AND z3ram_ena='1' ELSE '0';
-	sel_z3ram2      <= '1' WHEN (cpuaddr(31 downto 30)="01") and cpuaddr(24)='1' AND z3ram2_ena='1' ELSE '0';
+-- First block of ZIII RAM - 0x40000000 - 0x40ffffff
+	sel_z3ram       <= '1' WHEN (cpuaddr(31 downto 30)="01") and cpuaddr(26 downto 24)="000" AND z3ram_ena='1' ELSE '0';
+-- Second block of ZIII RAM - 32 meg from 0x42000000 - 0x43ffffff
+	sel_z3ram2      <= '1' WHEN (cpuaddr(31 downto 30)="01") and cpuaddr(25)='1' AND z3ram2_ena='1' ELSE '0';
+-- Third block of ZIII RAM - either 2 or 4 meg, starting at either 0x41000000 or 0x44000000
+	sel_z3ram3      <= '1' WHEN (cpuaddr(31 downto 30)="01") and cpuaddr(26)=z3ram2_ena and cpuaddr(24)=not z3ram2_ena and z3ram3_ena='1' ELSE '0';
 	sel_z2ram       <= '1' WHEN (cpuaddr(31 downto 24) = X"00") AND ((cpuaddr(23 downto 21) = "001") OR (cpuaddr(23 downto 21) = "010") OR (cpuaddr(23 downto 21) = "011") OR (cpuaddr(23 downto 21) = "100")) AND z2ram_ena='1' ELSE '0';
 	--sel_eth         <= '1' WHEN (cpuaddr(31 downto 24) = eth_base) AND eth_cfgd='1' ELSE '0';
 	sel_chip        <= '1' WHEN (cpuaddr(31 downto 24) = X"00") AND (cpuaddr(23 downto 21)="000") ELSE '0'; --$000000 - $1FFFFF
@@ -248,11 +256,12 @@ sel_eth<='0';
 	sel_slowram     <= '1' WHEN sel_slow='1' AND turboslow_d='1' ELSE '0';
 	sel_cart        <= '1' WHEN (cpuaddr(31 downto 24) = X"00") AND (cpuaddr(23 downto 20)="1010") ELSE '0'; -- $A00000 - $A7FFFF (actually matches up to $AFFFFF)
 	sel_audio       <= '1' WHEN (cpuaddr(31 downto 24) = X"00") AND (cpuaddr(23 downto 18)="111011") ELSE '0'; -- $EC0000 - $EFFFFF
-	sel_undecoded   <= '1' WHEN sel_32='1' and sel_z3ram='0' and sel_z3ram2='0' else '0';
+	sel_undecoded   <= '1' WHEN sel_32='1' and sel_z3ram='0' and sel_z3ram2='0' and sel_z3ram3='0' else '0';
 	sel_ram         <= '1' WHEN (
          sel_z2ram='1'
       OR sel_z3ram='1'
       OR sel_z3ram2='1'
+      OR sel_z3ram3='1'
       OR sel_chipram='1'
       OR sel_slowram='1'
       OR sel_kickram='1'
@@ -289,17 +298,28 @@ sel_eth<='0';
 -- 1100  1    0       C -> 4
 -- 1110  1    0       E -> 6 
  
--- Secondary ZIII mapping maps 41000000 -> 200000, bits 23 downto 20 are mapped like so:
--- 0000->0010, 0010->0100, 0100->0010, 0110->0100, 
--- addr(23) <= addr(23) and not sel_ziii_2;
--- addr(22) <= (addr(22) and not sel_ziii_2) or (addr(21) and sel_ziii_2);
--- addr(21) <= addr(21) xor sel_ziii_2;
+-- On 64-meg platforms we need an extra 32 meg merged into the memory map.
+-- If we configure that range second, it should end up in 42000000 - 43ffffff
+-- so the extra 2 or 4 meg will end up at either 41000000 or 4400000, depending
+-- on whether the extra 32 meg is configured.
+
+-- addr(25) will be high only when 32-meg block is active
+-- addr(24) will be high for the 16-meg block or the second half of the 32-meg block
+
+-- The extra ZIII mapping maps 41000000 -> 200000, (or 44000000 -> 200000)
+-- bits 23 downto 20 are mapped like so:
+-- 0000->0010 (1st 2 meg), 0010->0100 (2nd 2 meg),
+-- 0100->0010 (3rd 2 meg, aliases 1st), 0110->0100 (4th 2 meg, aliases 2nd), 
+-- addr(23) <= addr(23) and not sel_ziii_3;
+-- addr(22) <= (addr(22) and not sel_ziii_3) or (addr(21) and sel_ziii_3);
+-- addr(21) <= addr(21) xor sel_ziii_3;
  
-  ramaddr(31 downto 25) <= "0000000";
-  ramaddr(24) <= sel_z3ram; -- Remap the Zorro III RAM to 0x1000000
-  ramaddr(23)<=(cpuaddr(23) xor (cpuaddr(22) or cpuaddr(21))) and not sel_z3ram2;
-  ramaddr(22)<=cpuaddr(21) when sel_z3ram2='1' else cpuaddr(22);
-  ramaddr(21)<=cpuaddr(21) xor sel_z3ram2;
+  ramaddr(31 downto 26) <= "000000";
+  ramaddr(25) <= sel_z3ram2; -- Second block of 32 meg
+  ramaddr(24) <= (cpuaddr(24) and sel_z3ram2) or sel_z3ram; -- Remap the first block of Zorro III RAM to 0x1000000
+  ramaddr(23)<=(cpuaddr(23) xor (cpuaddr(22) or cpuaddr(21))) and not sel_z3ram3;
+  ramaddr(22)<=cpuaddr(21) when sel_z3ram3='1' else cpuaddr(22);
+  ramaddr(21)<=cpuaddr(21) xor sel_z3ram3;
   ramaddr(20 downto 0) <= cpuaddr(20 downto 0);
   
   -- 32bit address space for 68020, limit address space to 24bit for 68000/68010

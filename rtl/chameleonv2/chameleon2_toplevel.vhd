@@ -175,6 +175,8 @@ architecture rtl of chameleon2_toplevel is
 	signal rs232_txd : std_logic;
 	signal amiser_rxd : std_logic;
 	signal amiser_txd : std_logic;
+	signal midi_rxd : std_logic;
+	signal external_rxd : std_logic;
 
 -- Sound
 	signal audio_l : std_logic_vector(15 downto 0);
@@ -292,7 +294,7 @@ begin
 -- -----------------------------------------------------------------------
 	iec_clk_out <= '0';
 	iec_atn_out <= '0';
-	iec_dat_out <= '0';
+	iec_dat_out <= not amiser_txd; -- '0';
 	iec_srq_out <= '0';
 	nmi_out <= '0';
 	usart_rx<='1';
@@ -357,7 +359,7 @@ begin
 			ps2_keyboard_dat => ps2_keyboard_dat_in,
 
 			iec_clk => open, -- iec_clk_in,
-			iec_srq => open, -- iec_srq_in,
+			iec_srq => external_rxd, -- iec_srq_in,
 			iec_atn => open, -- iec_atn_in,
 			iec_dat => open  -- iec_dat_in
 		);
@@ -455,7 +457,7 @@ begin
 				amiga_reset_n => amiga_reset_n,
 				amiga_trigger => amiga_key_stb,
 				amiga_scancode => amiga_key,
-				midi_rxd => amiser_rxd,
+				midi_rxd => midi_rxd,
 				midi_txd => amiser_txd
 			);
 	end block;
@@ -481,6 +483,8 @@ joy4<="1" & joystick4;
 	
 
 vga_window<='1';
+
+amiser_rxd <= midi_rxd and external_rxd;
 
 virtual_top : COMPONENT minimig_virtual_top
 generic map

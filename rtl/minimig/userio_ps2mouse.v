@@ -5,32 +5,32 @@
 
 module userio_ps2mouse
 (
-	input wire        clk,       // 28MHz clock
-    input wire        clk7_en,
-	input wire        reset,     // reset
-	input wire        ps2mdat_i, // mouse PS/2 data
-	input wire        ps2mclk_i, // mouse PS/2 clk
-	output wire    	  ps2mdat_o, // mouse PS/2 data
-	output wire   	  ps2mclk_o, // mouse PS/2 clk
-    input wire [5:0]  mou_emu,
-    input wire        sof,
-    output reg [7:0]  zcount,    // mouse Z counter
-	output reg [7:0]  ycount,    // mouse Y counter
-	output reg [7:0]  xcount,    // mouse X counter
-	output reg        _mleft,    // left mouse button output
-	output reg        _mthird,   // third(middle) mouse button output
-	output reg        _mright,   // right mouse button output
-	input wire        test_load, // load test value to mouse counter
-	input wire [15:0] test_data  // mouse counter test value
+	input 	clk,		    	// 28MHz clock
+   input clk7_en,
+	input 	reset,			   	//reset 
+	input	ps2mdat_i,			//mouse PS/2 data
+	input	ps2mclk_i,			//mouse PS/2 clk
+	output	ps2mdat_o,			//mouse PS/2 data
+	output	ps2mclk_o,			//mouse PS/2 clk
+   input [5:0] mou_emu,
+   input sof,
+   output  reg [7:0]zcount,  // mouse Z counter
+	output	reg [7:0]ycount,	//mouse Y counter
+	output	reg [7:0]xcount,	//mouse X counter
+	output	reg _mleft,			//left mouse button output
+	output	reg _mthird,		//third(middle) mouse button output
+	output	reg _mright,		//right mouse button output
+	input	test_load,			//load test value to mouse counter
+	input	[15:0] test_data	//mouse counter test value
 );
 
-reg           mclkout = 1;
+reg           mclkout;
 wire          mdatout;
-reg  [ 2-1:0] mdatr = 2'b11;
-reg  [ 3-1:0] mclkr = 3'b111;
+reg  [ 2-1:0] mdatr;
+reg  [ 3-1:0] mclkr;
 
 reg  [11-1:0] mreceive;
-reg  [12-1:0] msend = 1;
+reg  [12-1:0] msend;
 reg  [16-1:0] mtimer;
 reg  [ 3-1:0] mstate;
 reg  [ 3-1:0] mnext;
@@ -53,8 +53,8 @@ reg  [12-1:0] mcmd;
 
 // bidirectional open collector IO buffers
 // AMR - had to move this to the toplevel for TC64.
-assign ps2mclk_o = mclkout;//  ? 1'bz : 1'b0;
-assign ps2mdat_o = mdatout;// ? 1'bz : 1'b0;
+assign ps2mclk_o = (mclkout);//  ? 1'bz : 1'b0;
+assign ps2mdat_o = (mdatout);// ? 1'bz : 1'b0;
 
 // input synchronization of external signals
 always @ (posedge clk) begin
@@ -132,7 +132,7 @@ always @(posedge clk) begin
 end
 
 assign mtready = (mtimer[15:0]==16'hffff);
-assign mthalf = mtimer[10];
+assign mthalf = mtimer[11];
 
 // PS2 mouse packet decoding and handling
 always @ (posedge clk) begin
@@ -175,129 +175,130 @@ end
 
 // PS2 mouse state machine
 always @ (posedge clk) begin
-  mclkout  <= 1'b1;
-  mtreset  <= 1'b1;
-  mrreset  <= 1'b0;
-  msreset  <= 1'b0;
-  mpacket  <= 3'd0;
-  mcmd_inc <= 1'b0;
-
   if (clk7_en) begin
-    if (reset == 1'b1 || mtready == 1'b1)
+    if (reset || mtready)
       mstate <= #1 0;
     else
       mstate <= #1 mnext;
   end
+end
 
+always @ (*) begin
+  mclkout  = 1'b1;
+  mtreset  = 1'b1;
+  mrreset  = 1'b0;
+  msreset  = 1'b0;
+  mpacket  = 3'd0;
+  mcmd_inc = 1'b0;
   case(mstate)
 
     0 : begin
       // initialize mouse phase 0, start timer
-      mtreset<=1;
-      mnext<=1;
+      mtreset=1;
+      mnext=1;
     end
 
     1 : begin
       //initialize mouse phase 1, hold clk low and reset send logic
-      mclkout<=0;
-      mtreset<=0;
-      msreset<=1;
+      mclkout=0;
+      mtreset=0;
+      msreset=1;
       if (mthalf) begin
         // clk was low long enough, go to next state
-        mnext<=2;
+        mnext=2;
       end else begin
-        mnext<=1;
+        mnext=1;
       end
     end
 
     2 : begin
       // initialize mouse phase 2, send command/data to mouse
-      mrreset<=1;
-      mtreset<=0;
+      mrreset=1;
+      mtreset=0;
       if (msready) begin
         // command sent
-        mcmd_inc <= 1;
+        mcmd_inc = 1;
         case (mcmd_cnt)
-          0 : mnext <= 4;
-          1 : mnext <= 6;
-          2 : mnext <= 6;
-          3 : mnext <= 6;
-          4 : mnext <= 6;
-          5 : mnext <= 6;
-          6 : mnext <= 6;
-          7 : mnext <= 5;
-          8 : mnext <= 6;
-          default : mnext <= 6;
+          0 : mnext = 4;
+          1 : mnext = 6;
+          2 : mnext = 6;
+          3 : mnext = 6;
+          4 : mnext = 6;
+          5 : mnext = 6;
+          6 : mnext = 6;
+          7 : mnext = 5;
+          8 : mnext = 6;
+          default : mnext = 6;
         endcase
       end else begin
-        mnext<=2;
+        mnext=2;
       end
     end
 
     3 : begin
       // get first packet byte
-      mtreset<=1;
+      mtreset=1;
       if (mrready) begin
         // we got our first packet byte
-        mpacket<=1;
-        mrreset<=1;
-        mnext<=4;
+        mpacket=1;
+        mrreset=1;
+        mnext=4;
       end else begin
         // we are still waiting
-        mnext<=3;
+        mnext=3;
       end
     end
 
     4 : begin
       // get second packet byte
-      mtreset<=1;
+      mtreset=1;
       if (mrready) begin
         // we got our second packet byte
-        mpacket<=2;
-        mrreset<=1;
-        mnext<=5;
+        mpacket=2;
+        mrreset=1;
+        mnext=5;
       end else begin
         // we are still waiting
-        mnext<=4;
+        mnext=4;
       end
     end
 
     5 : begin
       // get third packet byte 
-      mtreset<=1;
+      mtreset=1;
       if (mrready) begin
         // we got our third packet byte
-        mpacket<=3;
-        mrreset<=1;
-        mnext <= (intellimouse || !mcmd_done) ? 6 : 3;
+        mpacket=3;
+        mrreset=1;
+        mnext = (intellimouse || !mcmd_done) ? 6 : 3;
       end else begin
         // we are still waiting
-        mnext<=5;
+        mnext=5;
       end
     end
 
     6 : begin
       // get fourth packet byte
-      mtreset<=1;
+      mtreset=1;
       if (mrready) begin
         // we got our fourth packet byte
-        mpacket <= (mcmd_cnt == 8) ? 5 : 4;
-        mrreset<=1;
-        mnext <= !mcmd_done ? 0 : 3;
+        mpacket = (mcmd_cnt == 8) ? 5 : 4;
+        mrreset=1;
+        mnext = !mcmd_done ? 0 : 3;
       end else begin
         // we are still waiting
-        mnext<=6;
+        mnext=6;
       end
     end
 
     default : begin
       //we should never come here
-      mclkout<=1'bx;
-      mrreset<=1'bx;
-      mtreset<=1'bx;
-      msreset<=1'bx;
-      mpacket<=3'bxxx;
-      mnext<=0;
+      mclkout=1'bx;
+      mrreset=1'bx;
+      mtreset=1'bx;
+      msreset=1'bx;
+      mpacket=3'bxxx;
+      mnext=0;
     end
 
   endcase

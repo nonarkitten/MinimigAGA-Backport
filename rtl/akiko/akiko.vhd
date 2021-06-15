@@ -23,7 +23,7 @@ port (
 	host_ack : in std_logic;
 	host_q : in std_logic_vector(15 downto 0);
 	-- RTG signals
-	rtg_addr : out std_logic_vector(24 downto 4);
+	rtg_addr : out std_logic_vector(25 downto 4);
 	rtg_vbend : out std_logic_vector(6 downto 0);
 	rtg_ext : out std_logic;
 	rtg_pixelclock : out std_logic_vector(3 downto 0);
@@ -171,7 +171,7 @@ begin
 				if rtg_sel='1' then
 					case addr(4 downto 1) is
 						when X"0" =>	-- High word of framebuffer address
-							rtg_addr(24 downto 16)<=d(8 downto 0);
+							rtg_addr(25 downto 16)<=d(9 downto 0);
 						when X"1" =>	-- Low word of framebuffer address
 							rtg_addr(15 downto 4)<=d(15 downto 4);
 						when X"2" =>	-- CLUT (15) : Extend (14) : VBEnd(n downto 6) : PixelClock (3 downto 0)

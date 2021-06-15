@@ -129,6 +129,7 @@ architecture rtl of chameleon_toplevel is
 	signal rs232_txd : std_logic;
 	signal midi_rxd : std_logic;
 	signal midi_txd : std_logic;
+	signal external_rxd : std_logic;
 
 -- Sound
 	signal audio_l : std_logic_vector(15 downto 0);
@@ -392,17 +393,16 @@ reset_n<= not reset;
 			amiga_scancode => amiga_key,
 
 			midi_txd => midi_txd,
-			midi_rxd => midi_rxd
+			midi_rxd => midi_rxd,
 --
 --			iec_atn_out => rs232_txd,
 --			iec_clk_in => rs232_rxd
 --			iec_clk_out : in std_logic := '1';
---			iec_dat_out : in std_logic := '1';
+			iec_dat_out => midi_txd,
 --			iec_srq_out : in std_logic := '1';
---			iec_dat_in : out std_logic;
+--			iec_dat_in : in std_logic := '1';
 --			iec_atn_in : out std_logic;
---			iec_srq_in : out std_logic
-	
+			iec_srq_in => external_rxd
 		);
 
 	cdtv : entity work.chameleon_cdtv_remote
@@ -445,7 +445,7 @@ PORT map
 		CTRL_TX => rs232_txd,
 		CTRL_RX => rs232_rxd,
 		AMIGA_TX => midi_txd,
-		AMIGA_RX => midi_rxd,
+		AMIGA_RX => midi_rxd and external_rxd,
 		VGA_PIXEL => vga_pixel,
 		VGA_SELCS => vga_selcsync,
 		VGA_CS => vga_csync,

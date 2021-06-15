@@ -108,7 +108,7 @@ wire [ 16-1:0] tg68_cout;
 wire [ 16-1:0] tg68_cin;
 wire           tg68_cpuena;
 wire [  4-1:0] cpu_config;
-wire     [3:0] board_configured;
+wire     [4:0] board_configured;
 wire           turbochipram;
 wire           turbokick;
 wire     [1:0] slow_config;
@@ -279,6 +279,7 @@ TG68K tg68k (
   .ziiram_active(board_configured[0]),
   .ziiiram_active(board_configured[1]),
   .ziiiram2_active(board_configured[2]),
+  .ziiiram3_active(board_configured[3]),
 //  .fastramcfg   ({&memcfg[5:4],memcfg[5:4]}),
   .eth_en       (1'b1), // TODO
   .sel_eth      (),
@@ -332,7 +333,7 @@ sdram_ctrl sdram (
   .cpuena       (tg68_cpuena      ),
   .cpuRD        (tg68_cout        ),
   .cpuWR        (tg68_cin         ),
-  .cpuAddr      (tg68_cad[24:1]   ),
+  .cpuAddr      (tg68_cad[25:1]   ),
   .cpuU         (tg68_cuds        ),
   .cpuL         (tg68_clds        ),
   .cpustate     (tg68_cpustate    ),
@@ -512,14 +513,15 @@ minimig minimig (
   .floppy_frd   (                 ),  // floppy fifo reading
   .hd_fwr       (                 ),  // hd fifo writing
   .hd_frd       (                 ),   // hd fifo  ading
-	.hblank_out   (hblank_out       ),
-	.vblank_out   (vblank_out       ),
-	.osd_blank_out(osd_window       ),  // Let the toplevel dither module handle drawing the OSD.
-	.osd_pixel_out(osd_pixel        ),
-	.rtg_ena      (rtg_ena          ),
+  .hblank_out   (hblank_out       ),
+  .vblank_out   (vblank_out       ),
+  .osd_blank_out(osd_window       ),  // Let the toplevel dither module handle drawing the OSD.
+  .osd_pixel_out(osd_pixel        ),
+  .rtg_ena      (rtg_ena          ),
   .ntsc         (ntsc             ),
   .ext_int2     (1'b0             ),
-  .ext_int6     (aud_int          )
+  .ext_int6     (aud_int          ),
+  .ram_64meg    (core_config[3]   )
 );
 
 
@@ -615,8 +617,8 @@ assign rtg_r=rtg_16bit ? {rtg_dat[15:11],rtg_dat[15:13]} : {rtg_dat[14:10],rtg_d
 assign rtg_g=rtg_16bit ? {rtg_dat[10:5],rtg_dat[10:9]} : {rtg_dat[9:5],rtg_dat[9:7]};
 assign rtg_b={rtg_dat[4:0],rtg_dat[4:2]};
 
-wire [24:4] rtg_baseaddr;
-wire [24:0] rtg_addr;
+wire [25:4] rtg_baseaddr;
+wire [25:0] rtg_addr;
 wire [15:0] rtg_dat;
 
 wire rtg_ramreq;
@@ -624,8 +626,8 @@ wire [15:0] rtg_fromram;
 wire rtg_fill;
 
 // Replicate the CPU's address mangling.
-wire [24:0] rtg_addr_mangled;
-assign rtg_addr_mangled[24]=rtg_addr[24];
+wire [25:0] rtg_addr_mangled;
+assign rtg_addr_mangled[25:24]=rtg_addr[25:24];
 assign rtg_addr_mangled[23]=rtg_addr[23]^(rtg_addr[22]|rtg_addr[21]);
 assign rtg_addr_mangled[22:0]=rtg_addr[22:0];
 
@@ -634,7 +636,7 @@ VideoStream myvs
 	.clk(clk_114),
 	.reset_n((!vblank_out) & rtg_ena),
 	.enable(rtg_ena),
-	.baseaddr({rtg_baseaddr[24:4],4'b0}),
+	.baseaddr({rtg_baseaddr[25:4],4'b0}),
 	// SDRAM interface
 	.a(rtg_addr),
 	.req(rtg_ramreq),
@@ -757,7 +759,7 @@ reg aud_tick;
 reg aud_tick_d;
 reg aud_next;
 
-wire [24:0] aud_addr;
+wire [25:0] aud_addr;
 wire [15:0] aud_sample;
 
 wire aud_ramreq;
@@ -799,7 +801,7 @@ VideoStream myaudiostream
 	.clk(clk_114),
 	.reset_n(aud_ena_cpu), // !aud_clear),
 	.enable(aud_ena_cpu),
-	.baseaddr(25'b0),
+	.baseaddr(26'b0),
 	// SDRAM interface
 	.a(aud_addr),
 	.req(aud_ramreq),

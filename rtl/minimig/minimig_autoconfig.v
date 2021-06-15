@@ -15,9 +15,11 @@ module minimig_autoconfig
 	input [1:0] slowram_config,
 	input	[1:0] fastram_config,
 	input m68020,
-	output reg [3:0] board_configured,
+	input ram_64meg,
+	output reg [4:0] board_configured,
 	output reg autoconfig_done
 );
+
 
 reg [2:0] acdevice;
 reg [3:0] ramsize;
@@ -94,18 +96,23 @@ begin
 						3'b001 : begin // ZIII RAM
 								board_configured[1] <= 1'b1;
 								
-								roma_wr[8:6] <= 3'b010;
-								roma_wr[5:0] <= 6'h05;	// Write address for modifying size of 2nd ZIII RAM.
+								roma_wr[8:6] = 3'b011;	// Third ZIII entry
+								roma_wr[5:0] = 6'h05;	// Write address for modifying size of 2nd ZIII RAM.
 								ramsize <= |slowram_config ? 4'b1000 : 4'b0111; // 2 meg or 4 meg
 								rom_we<=1'b1;
-								acdevice<=3'b010;
+								// skip straight to 3'b011 on 32 meg platforms
+								acdevice<=ram_64meg ? 3'b010 : 3'b011;
 //								acdevice<=3'b011; // Ethernet after ZIII RAM
 							end
-						3'b010 : begin // ZIII RAM
+						3'b010 : begin // ZIII RAM 2 - 2nd 32 meg on 64 meg platforms
 								board_configured[2] <= 1'b1;
+								acdevice<=3'b011;
+							end
+						3'b011 : begin // ZIII RAM 3 - Use leftover space in the memory map.
+								board_configured[3] <= 1'b1;
 								acdevice<=3'b111; // NULL device to terminate the chain
 							end
-						3'b011 : begin // ETH
+						3'b100 : begin // ETH
 								board_configured[3] <= 1'b1;
 								acdevice<=3'b111; // NULL device to terminate the chain
 							end

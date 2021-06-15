@@ -69,12 +69,12 @@ always @(*)
 always @(posedge clk)
   if (clk7_en) begin
     if (reset)
-      count_ena <= 1'd1;
-    else if (wr && !crb7) // crb7==0 enables writing to TOD counter
+      count_ena <= 1'd0; // AMR - experimental fix for 3.1.4 TODA_SAFE problem - on reset disable counting until first access.
+    else if (wr) // AMR && !crb7) // crb7==0 enables writing to TOD counter
     begin
-      if (thi/* || tme*/) // stop counting
+      if (thi && !crb7 /* || tme*/) // stop counting
         count_ena <= 1'd0;
-      else if (tlo) // write to LSB starts counting again
+      else if (tlo || (tcr && !data_in[7])) // write to LSB [or CR with bit 7=0 -- AMR] starts counting again
         count_ena <= 1'd1;
     end
   end

@@ -48,7 +48,8 @@ module gayle
 	input	sel_gayle,			// $DExxxx
 	output	irq,
 	output	nrdy,				// fifo is not ready for reading 
-	input	[1:0] hdd_ena,		// enables Master & Slave drives
+	input	[1:0] hdd0_ena,		// enables Master & Slave drives on primary channel
+	input	[1:0] hdd1_ena,		// enables Master & Slave drives on secondary channel
 
 	output	hdd_cmd_req,
 	output	hdd_dat_req,
@@ -110,15 +111,15 @@ wire 	sel_tfr;		// HDD task file registers select
 wire 	sel_fifo;		// HDD data port select (FIFO buffer)
 wire 	sel_status;		// HDD status register select
 wire 	sel_command;	// HDD command register select
-wire  sel_cs;         // Gayle IDE CS
+wire  sel_cs;			// Gayle IDE CS
 wire 	sel_intreq;		// Gayle interrupt request status register select
 wire 	sel_intena;		// Gayle interrupt enable register select
-wire  sel_cfg;      // Gayle CFG
+wire  sel_cfg;			// Gayle CFG
 
 // internal registers
 reg		intena;			// Gayle IDE interrupt enable bit
 reg		intreq;			// Gayle IDE interrupt request bit
-reg		block_mark;	// Gayle IDE multiple block start flag
+reg		block_mark;		// Gayle IDE multiple block start flag
 reg		busy;			// busy status (command processing state)
 reg		pio_in;			// pio in command type is being processed
 reg		pio_out;		// pio out command type is being processed
@@ -127,11 +128,11 @@ reg   [3:0] cfg;
 reg   [1:0] cs;
 reg   [5:0] cs_mask;
 
-reg		dev;			// drive select (Master/Slave)
+reg	  [1:0]	dev;		// drive select (Primary/Secondary, Master/Slave)
 wire 	bsy;			// busy
 wire 	drdy;			// drive ready
 wire 	drq;			// data request
-reg  	drq_d;		// data request
+reg  	drq_d;			// data request
 wire 	err;			// error
 wire 	[7:0] status;	// HDD status
 
@@ -176,7 +177,7 @@ assign err = error;
 
 // address decoding
 assign sel_gayleid = sel_gayle && address_in[15:12]==4'b0001 ? VCC : GND;	  // GAYLEID, $DE1xxx
-assign sel_tfr = sel_ide && address_in[15:14]==2'b00 && !address_in[12] ? VCC : GND; // $DA0xxx, $DA2xxx
+assign sel_tfr = sel_ide && address_in[15:14]==2'b00 && (!address_in[12] || |hdd1_ena) ? VCC : GND; // $DA0xxx, $DA1xxx, $DA2xxx, $DA3xxx
 assign sel_status = rd && sel_tfr && address_in[4:2]==3'b111 ? VCC : GND;
 assign sel_command = hwr && sel_tfr && address_in[4:2]==3'b111 ? VCC : GND;
 assign sel_fifo = sel_tfr && address_in[4:2]==3'b000 ? VCC : GND;
@@ -239,7 +240,7 @@ assign tfr_sel = busy ? hdd_addr : address_in[4:2];
 assign tfr_in = busy ? hdd_data_out[7:0] : data_in[15:8];
 
 // input multiplexer for SPI host
-assign hdd_data_in = tfr_sel==0 ? fifo_data_out : {8'h00,tfr_out};
+assign hdd_data_in = tfr_sel==0 ? fifo_data_out : {7'h0, dev[1], tfr_out};
 
 // task file registers
 always @(posedge clk)
@@ -256,7 +257,7 @@ always @(posedge clk)
   	if (reset)
   		dev <= 0;
   	else if (sel_tfr && address_in[4:2]==6 && hwr)
-  		dev <= data_in[12];
+		dev <= {address_in[12], data_in[12]};
   end
 		
 // IDE interrupt enable register
@@ -395,8 +396,14 @@ gayle_fifo SECBUF1
 // fifo is not ready for reading
 assign nrdy = pio_in & sel_fifo & fifo_empty;
 
+wire [15:0] ide_out = sel_fifo && rd ? fifo_data_out  :
+                      sel_status ? ((!dev[1] && hdd0_ena[dev[0]]) || (dev[1] && hdd1_ena[dev[0]])) ? {status,8'h00} : 16'h00_00 :
+                      sel_tfr && rd ? {tfr_out,8'h00} : 16'h00_00;
+
+
+
 //data_out multiplexer
-assign data_out = (sel_fifo && rd ? fifo_data_out : sel_status ? (!dev && hdd_ena[0]) || (dev && hdd_ena[1]) ? {status,8'h00} : 16'h00_00 : sel_tfr && rd ? {tfr_out,8'h00} : 16'h00_00)
+assign data_out = ide_out
          | (sel_cs      && rd  ? {(cs_mask[5] || intreq), cs_mask[4:0], cs, 8'h0} : 16'h00_00)
          | (sel_intreq  && rd  ? {intreq,      15'b000_0000_0000_0000}            : 16'h00_00)
          | (sel_intena  && rd  ? {intena,      15'b000_0000_0000_0000}            : 16'h00_00)

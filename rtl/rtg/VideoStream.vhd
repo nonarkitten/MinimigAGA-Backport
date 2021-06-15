@@ -17,8 +17,8 @@ port
 	reset_n : in std_logic;
 	enable : in std_logic;
 	-- RAM interface
-	baseaddr : in std_logic_vector(24 downto 0);
-	a : out std_logic_vector(24 downto 0);
+	baseaddr : in std_logic_vector(25 downto 0);
+	a : out std_logic_vector(25 downto 0);
 	req : out std_logic;
 	d : in std_logic_vector(15 downto 0);
 	fill : in std_logic;
@@ -34,8 +34,8 @@ type samplebuffer is array(0 to 511) of std_logic_vector(15 downto 0);
 signal samplebuf : samplebuffer;
 signal inptr : unsigned(8 downto 0);
 signal outptr : unsigned(8 downto 0);
-signal address : unsigned(24 downto 0);
-signal address_high : unsigned(24 downto 4);
+signal address : unsigned(25 downto 0);
+signal address_high : unsigned(25 downto 4);
 signal address_low : unsigned(2 downto 0);
 signal first_fill : std_logic;
 signal fill_d : std_logic;
@@ -71,7 +71,7 @@ begin
 
 		if reset_n='0' then
 --			address<=unsigned(baseaddr);
-			address_high<=unsigned(baseaddr(24 downto 4));
+			address_high<=unsigned(baseaddr(25 downto 4));
 			address_low<="000";
 --			inptr<=unsigned(baseaddr(9 downto 1));
 			first_fill<='1';

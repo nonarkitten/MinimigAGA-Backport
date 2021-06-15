@@ -22,8 +22,9 @@
 -- Modifications by Alastair M. Robinson to work with a cheap
 -- Ebay Cyclone III board.
 
+
 library IEEE;
-use IEEE.STD_LOGIC_1164.all;
+use IEEE.std_logic_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
 use ieee.numeric_std.all;
 

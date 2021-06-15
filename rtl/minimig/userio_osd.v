@@ -29,7 +29,8 @@ module userio_osd
 	output	reg [3:0] floppy_config = 0,
 	output	reg [1:0] scanline = 0,
   output  reg [1:0] dither = 0,
-	output	reg	[2:0] ide_config = 0,		//enable hard disk support
+  output    reg    [2:0] ide_config0 = 0,        //enable hard disk support
+  output    reg    [2:0] ide_config1 = 0,        //enable hard disk support
   output  reg [3:0] cpu_config = 0,
   output  reg [1:0] autofire_config = 0,
   output  reg       cd32pad = 0,
@@ -65,8 +66,9 @@ reg		vena;
 
 wire  [9:0] verbeam_osdclk;
 
-reg 	[6:0] t_memory_config = 7'b0_00_01_01;
-reg		[2:0] t_ide_config = 0;
+reg   [6:0] t_memory_config = 7'b0_00_01_01;
+reg   [2:0] t_ide_config0 = 0;
+reg   [2:0] t_ide_config1 = 0;
 reg   [3:0] t_cpu_config = 0;
 reg   [4:0] t_chipset_config = 0;
 
@@ -81,7 +83,8 @@ always @(posedge clk)
     if (reset)
     begin
       chipset_config <= t_chipset_config;
-      ide_config <= t_ide_config;
+      ide_config0 <= t_ide_config0;
+      ide_config1 <= t_ide_config1;
       cpu_config[1:0] <= t_cpu_config[1:0];
       memory_config[5:0] <= t_memory_config[5:0];
     end
@@ -288,7 +291,8 @@ localparam [5:0]
   SPI_MEMORY_CFG_ADR   = 6'b0_010_01,
   SPI_VIDEO_CFG_ADR    = 6'b0_011_01,
   SPI_FLOPPY_CFG_ADR   = 6'b0_100_01,
-  SPI_HARDDISK_CFG_ADR = 6'b0_101_01,
+  SPI_HARDDISK0_CFG_ADR= 6'b0_101_01,
+  SPI_HARDDISK1_CFG_ADR= 6'b0_101_10,
   SPI_JOYSTICK_CFG_ADR = 6'b0_110_01,
   SPI_OSD_BUFFER_ADR   = 6'b0_000_11,
   SPI_MEM_WRITE_ADR    = 6'b0_001_11,
@@ -327,7 +331,8 @@ reg spi_cpu_cfg_sel       = 1'b0;
 reg spi_memory_cfg_sel    = 1'b0;
 reg spi_video_cfg_sel     = 1'b0;
 reg spi_floppy_cfg_sel    = 1'b0;
-reg spi_harddisk_cfg_sel  = 1'b0;
+reg spi_harddisk0_cfg_sel = 1'b0;
+reg spi_harddisk1_cfg_sel = 1'b0;
 reg spi_joystick_cfg_sel  = 1'b0;
 reg spi_osd_buffer_sel    = 1'b0;
 reg spi_mem_write_sel     = 1'b0;
@@ -342,7 +347,8 @@ always @ (*) begin
   spi_memory_cfg_sel   = 1'b0;
   spi_video_cfg_sel    = 1'b0;
   spi_floppy_cfg_sel   = 1'b0;
-  spi_harddisk_cfg_sel = 1'b0;
+  spi_harddisk0_cfg_sel= 1'b0;
+  spi_harddisk1_cfg_sel= 1'b0;
   spi_joystick_cfg_sel = 1'b0;
   spi_osd_buffer_sel   = 1'b0;
   spi_mem_write_sel    = 1'b0;
@@ -357,7 +363,8 @@ always @ (*) begin
     SPI_MEMORY_CFG_ADR   : spi_memory_cfg_sel   = 1'b1;
     SPI_VIDEO_CFG_ADR    : spi_video_cfg_sel    = 1'b1;
     SPI_FLOPPY_CFG_ADR   : spi_floppy_cfg_sel   = 1'b1;
-    SPI_HARDDISK_CFG_ADR : spi_harddisk_cfg_sel = 1'b1;
+    SPI_HARDDISK0_CFG_ADR: spi_harddisk0_cfg_sel= 1'b1;
+    SPI_HARDDISK1_CFG_ADR: spi_harddisk1_cfg_sel= 1'b1;
     SPI_JOYSTICK_CFG_ADR : spi_joystick_cfg_sel = 1'b1;
     SPI_OSD_BUFFER_ADR   : spi_osd_buffer_sel   = 1'b1;
     SPI_MEM_WRITE_ADR    : spi_mem_write_sel    = 1'b1;
@@ -372,7 +379,8 @@ always @ (*) begin
       spi_memory_cfg_sel   = 1'b0;
       spi_video_cfg_sel    = 1'b0;
       spi_floppy_cfg_sel   = 1'b0;
-      spi_harddisk_cfg_sel = 1'b0;
+      spi_harddisk0_cfg_sel= 1'b0;
+      spi_harddisk1_cfg_sel= 1'b0;
       spi_joystick_cfg_sel = 1'b0;
       spi_osd_buffer_sel   = 1'b0;
       spi_mem_write_sel    = 1'b0;
@@ -409,7 +417,8 @@ always @ (posedge clk) begin
       if (spi_memory_cfg_sel)   begin if (dat_cnt == 0) t_memory_config <= #1 wrdat[6:0]; end
       if (spi_video_cfg_sel)    begin if (dat_cnt == 0) {dither, hr_filter, lr_filter, scanline} <= #1 wrdat[7:0]; end
       if (spi_floppy_cfg_sel)   begin if (dat_cnt == 0) floppy_config <= #1 wrdat[3:0]; end
-      if (spi_harddisk_cfg_sel) begin if (dat_cnt == 0) t_ide_config <= #1 wrdat[2:0]; end 
+      if (spi_harddisk0_cfg_sel)begin if (dat_cnt == 0) t_ide_config0 <= #1 wrdat[2:0]; end
+      if (spi_harddisk1_cfg_sel)begin if (dat_cnt == 0) t_ide_config1 <= #1 wrdat[2:0]; end
       if (spi_joystick_cfg_sel) begin if (dat_cnt == 0) {cd32pad, autofire_config} <= #1 wrdat[2:0]; end
       //if (spi_joystick_cfg_sel) begin if (dat_cnt == 0) {autofire_config} <= #1 wrdat[1:0]; end
   //    if (spi_osd_buffer_sel)   begin if (dat_cnt == 3) highlight <= #1 wrdat[3:0]; end

@@ -82,6 +82,7 @@ reg   pclkout;        //ps2 clk out
 wire  pdatout;        //ps2 data out
 wire  pclkneg;        //negative edge of ps2 clock strobe
 reg   pdatb,pclkb,pclkc;    //input synchronization 
+
 reg   [11:0] preceive;    //ps2 receive register
 reg   [11:0] psend;     //ps2 send register
 reg   [19:0] ptimer;      //ps2 timer
