@@ -62,29 +62,53 @@ module pal_to_hd_upsample(
     reg   [1:0] r_cur_write_buf = 2'b00;  // Number of the current write buffer
     reg         r_next_buf      = 1'b0;   // signal when to swap buffer
 
-    reg         r_pal_hsync_;
-    reg         r_pal_vsync_;
+    reg   [2:0] r_pal_hsync;
+    reg   [2:0] r_pal_vsync;
     reg         r_hd_hsync_;
     reg         r_frame_end;
 
     // Buffer to hold 2 lines of data
     reg         r_ena;
     reg         r_wea;
-    reg  [12:0] r_addra = 0;
+    reg  [13:0] r_addra = 0;
     reg  [23:0] r_dina;
-    reg  [12:0] r_addrb = 0;
+    reg  [13:0] r_addrb = 0;
     wire [23:0] w_doutb;
 
-    // blk_mem_gen_1 upsample_blk_ram (
-    //     .clka(clk),    // input wire clka
-    //     .ena(r_ena),      // input wire ena
-    //     .wea(r_wea),      // input wire [0 : 0] wea
-    //     .addra(r_addra),  // input wire [11 : 0] addra
-    //     .dina(r_dina),    // input wire [23 : 0] dina
-    //     .clkb(clk),    // input wire clkb
-    //     .addrb(r_addrb),  // input wire [11 : 0] addrb
-    //     .doutb(w_doutb)  // output wire [23 : 0] doutb
-    // );
+    // Detect edges in Vsync and Hsync
+    reg r_pal_hpos;
+    reg r_pal_hneg;
+    reg r_pal_vpos;
+    reg r_pal_vneg;
+    always @(posedge clk) begin
+        // Reset registers
+        r_pal_hpos <= 1'b0; 
+        r_pal_hneg <= 1'b0;
+        r_pal_vpos <= 1'b0;
+        r_pal_vneg <= 1'b0;
+
+        // Sync registers
+        r_pal_hsync <= {r_pal_hsync[1], r_pal_hsync[0], i_pal_hsync};
+        r_pal_vsync <=  {r_pal_vsync[1], r_pal_vsync[0], i_pal_vsync};
+
+        // Hsync 
+        if (r_pal_hsync[2:1] == 2'b01) begin
+            r_pal_hpos<= 1'b1;
+        end
+        if (r_pal_hsync[2:1] == 2'b10) begin
+            r_pal_hneg <= 1'b1;
+        end
+
+        // Vsync
+        if (r_pal_vsync[2:1] == 2'b01) begin
+            r_pal_vpos <= 1'b1;
+        end
+        if (r_pal_vsync[2:1] == 2'b10) begin
+            r_pal_vneg <= 1'b1;
+        end
+    end
+
+    // Line buffer
     bram_tdp #(
         .DATA(24),
         .ADDR(14)
@@ -112,12 +136,14 @@ module pal_to_hd_upsample(
     reg [11:0]  v_div_var = 12'b0;
     always @(posedge clk) begin
         // start of the horizontal line
-        if (r_pal_hsync_ == 1'b1 && i_pal_hsync == 1'b0) begin
+        if (r_pal_hneg) begin
+            // Data should be captured
             r_line_active <= 1'b1;
         end
 
         // end of the horizontal line
-        if (r_pal_hsync_ == 1'b0 && i_pal_hsync == 1'b1) begin
+        // if (r_pal_hsync_ == 1'b0 && i_pal_hsync == 1'b1) begin
+        if (r_pal_hpos) begin
             r_line_active   <= 1'b0; // Stop counter
             r_line_count    <= 0;  // Reset counter
             r_v_count       <= r_v_count + 1;
@@ -137,6 +163,16 @@ module pal_to_hd_upsample(
             r_line_count <= 0;
             r_act_active <= 0;
         end
+    end
+
+    // Generate Frame end signal, to reset read loop
+    always @(posedge clk) begin
+        r_frame_end <= 1'b0;
+        if (r_pal_vneg) begin
+            r_frame_end <= 1'b1;
+        end
+        // Provide end of sync signal
+        //r_pal_vsync_ <=  i_pal_vsync;
     end
 
     // Generate sample enable
@@ -162,7 +198,7 @@ module pal_to_hd_upsample(
     reg         r_hd_clk_;
     reg [11:0]  r_h_pos = 12'b0;
     always @(posedge clk) begin
-        r_pal_hsync_ <= i_pal_hsync;
+        //r_pal_hsync_ <= i_pal_hsync;
 
         // write the pixel
         r_wea <= 1'b0;
@@ -175,7 +211,8 @@ module pal_to_hd_upsample(
         end
 
         // End of input line
-        if (r_pal_hsync_ == 1'b1 && i_pal_hsync == 1'b0) begin
+        // if (r_pal_hsync_ == 1'b1 && i_pal_hsync == 1'b0) begin
+        if (r_pal_hneg) begin
             r_next_buf <= 1'b1; // Switch buffer
 
             // Switch to next write buffer
@@ -188,21 +225,21 @@ module pal_to_hd_upsample(
             // Switch the current write buffer
             case (r_cur_write_buf)
                 0:
-                    r_addra <= 13'h0000;
+                    r_addra <= 14'h0000;
                 1:
-                    r_addra <= 13'h0800;
+                    r_addra <= 14'h0800;
                 2:
-                    r_addra <= 13'h1000;
+                    r_addra <= 14'h1000;
                 3:
-                    r_addra <= 13'h1800;
+                    r_addra <= 14'h1800;
                 4:
-                    r_addra <= 13'h2000;
+                    r_addra <= 14'h2000;
                 5:
-                    r_addra <= 13'h2800;
+                    r_addra <= 14'h2800;
                 6:
-                    r_addra <= 13'h3000;
+                    r_addra <= 14'h3000;
                 7:
-                    r_addra <= 13'h3800;
+                    r_addra <= 14'h3800;
             endcase
         end
 
@@ -271,22 +308,20 @@ module pal_to_hd_upsample(
             endcase
         end
 
-        // Provide end of sync signal
-        r_pal_vsync_ <=  i_pal_vsync;
-        r_frame_end <= 1'b0;
 
         // posedge vsync
-        if (r_pal_vsync_ == 1'b0 && i_pal_vsync == 1'b1) begin
+        // if (r_pal_vsync_ == 1'b0 && i_pal_vsync == 1'b1) begin
+        if (r_pal_vpos) begin
             if(r_v_count > r_v_count_prev) begin
-                r_long_frame <= 1'b1;
+                r_long_frame <= 1'b0;
             end
         end
 
         // Neg edge vsync
-        if (r_pal_vsync_ == 1'b1 && i_pal_vsync == 1'b0) begin
+        // if (r_pal_vsync_ == 1'b1 && i_pal_vsync == 1'b0) begin
+        if (r_pal_vneg) begin
             r_v_count_prev <= r_v_count;
             r_v_count <= 0;
-            r_frame_end <= 1'b1;
             r_long_frame <= 1'b0;
             // Reset the read and write buffer to start
             // When the current frame is long the next frame needs to
@@ -307,100 +342,102 @@ module pal_to_hd_upsample(
     assign o_hd_b = r_hd_b;
     assign o_frame_end = r_frame_end;
     //assign o_vblank_width = r_vblank_width;
+    
+    assign o_hd_vsync = i_hd_vsync;
 
-    // Change the Vsync timing to translate the image up N lines
-    translate_vert my_translate_vert (
-        .clk(clk),
-        .reset(reset),
-        .pix_en(r_pix_en),      // Pixel clock
-        .i_vsync(i_hd_vsync),   // Original Vsync signal
-        .v_trans(i_hd_voffset + OFFSET_VT),    // Number of lines to translate the vsync down
-        .o_vsync(o_hd_vsync)    // Delayed HD vsync signal
-    );
+    // // Change the Vsync timing to translate the image up N lines
+    // translate_vert my_translate_vert (
+    //     .clk(clk),
+    //     .reset(reset),
+    //     .pix_en(r_pix_en),      // Pixel clock
+    //     .i_vsync(i_hd_vsync),   // Original Vsync signal
+    //     .v_trans(i_hd_voffset + OFFSET_VT),    // Number of lines to translate the vsync down
+    //     .o_vsync(o_hd_vsync)    // Delayed HD vsync signal
+    // );
 endmodule
 
-module translate_vert(
-    input clk,
-    input reset,
-    input pix_en,                               // Pixel clock
-    input i_vsync,                              // Original Vsync signal
-    input [8:0] v_trans,                        // Number of lines to translate the vsync down
-    output o_vsync
-);
-    // Horizontal timing 720p 50Hz @ 50MHz clock
-    parameter HZ_ACT_PIX = 1280;
-    parameter HZ_FRONT_PORCH = 8;
-    parameter HZ_SYNC_WIDTH = 32;
-    parameter HZ_BACK_PORCH = 40;
-    parameter HZ_TOTAL = HZ_ACT_PIX + HZ_FRONT_PORCH + HZ_SYNC_WIDTH + HZ_BACK_PORCH;
-    parameter MAX_TRANSLATE = 128;
-
-    reg delay_count_1_start = 0;
-    reg [$clog2(MAX_TRANSLATE*HZ_TOTAL):0] delay_count_1 = 0;
-    reg delay_count_0_start = 0;
-    reg [$clog2(MAX_TRANSLATE*HZ_TOTAL):0] delay_count_0 = 0;
-    reg vsync2;
-    reg vsync_pulse;
-    reg r_vsync;
-
-    assign o_vsync = r_vsync;
-
-    // generate hsync up/down pulse
-    always @(posedge clk) begin
-        if (reset) begin
-            vsync_pulse <= 0;
-        end else begin
-            vsync2 <= i_vsync;
-
-            // Vsync delta pulse
-            vsync_pulse <= 0;
-            if (i_vsync != vsync2) begin
-                vsync_pulse <= 1;
-            end 
-        end
-    end
-
-    // Handle delay of vsync to translate the image
-    // The more the vsync is delayed, the more the image moves up
-    always @(posedge clk) begin
-        if (reset) begin
-            delay_count_0 <= 0;
-            delay_count_0_start <= 0;
-            delay_count_1 <= 0;
-            delay_count_1_start <= 0;
-            r_vsync <= 0;
-        end else begin
-            // from 0 to 1
-            if (vsync_pulse && i_vsync) begin
-                delay_count_1 <= HZ_TOTAL*v_trans;
-                delay_count_1_start <= 1;
-            end 
-            // from 1 to 0
-            if (vsync_pulse && ~i_vsync) begin
-                delay_count_0 <= HZ_TOTAL*v_trans;
-                delay_count_0_start <= 1;
-            end        
-
-            // Decrease the counter based on the pixel clock
-            if (pix_en) begin
-                if (delay_count_0_start) begin
-                    delay_count_0 <= delay_count_0 - 1;
-                end
-                if (delay_count_1_start) begin
-                    delay_count_1 <= delay_count_1 - 1;
-                end
-            end
-
-            // When the counters are done change the output signal
-            if ((delay_count_1 == 0) && delay_count_1_start) begin
-                delay_count_1_start <= 0;
-                r_vsync <= 1;    
-            end
-
-            if ((delay_count_0 == 0) && delay_count_0_start) begin
-                delay_count_0_start <= 0;
-                r_vsync <= 0;    
-            end
-        end
-    end
-endmodule
+// module translate_vert(
+//     input clk,
+//     input reset,
+//     input pix_en,                               // Pixel clock
+//     input i_vsync,                              // Original Vsync signal
+//     input [8:0] v_trans,                        // Number of lines to translate the vsync down
+//     output o_vsync
+// );
+//     // Horizontal timing 720p 50Hz @ 50MHz clock
+//     parameter HZ_ACT_PIX = 1280;
+//     parameter HZ_FRONT_PORCH = 8;
+//     parameter HZ_SYNC_WIDTH = 32;
+//     parameter HZ_BACK_PORCH = 40;
+//     parameter HZ_TOTAL = HZ_ACT_PIX + HZ_FRONT_PORCH + HZ_SYNC_WIDTH + HZ_BACK_PORCH;
+//     parameter MAX_TRANSLATE = 128;
+//
+//     reg delay_count_1_start = 0;
+//     reg [$clog2(MAX_TRANSLATE*HZ_TOTAL):0] delay_count_1 = 0;
+//     reg delay_count_0_start = 0;
+//     reg [$clog2(MAX_TRANSLATE*HZ_TOTAL):0] delay_count_0 = 0;
+//     reg vsync2;
+//     reg vsync_pulse;
+//     reg r_vsync;
+//
+//     assign o_vsync = r_vsync;
+//
+//     // generate hsync up/down pulse
+//     always @(posedge clk) begin
+//         if (reset) begin
+//             vsync_pulse <= 0;
+//         end else begin
+//             vsync2 <= i_vsync;
+//
+//             // Vsync delta pulse
+//             vsync_pulse <= 0;
+//             if (i_vsync != vsync2) begin
+//                 vsync_pulse <= 1;
+//             end
+//         end
+//     end
+//
+//     // Handle delay of vsync to translate the image
+//     // The more the vsync is delayed, the more the image moves up
+//     always @(posedge clk) begin
+//         if (reset) begin
+//             delay_count_0 <= 0;
+//             delay_count_0_start <= 0;
+//             delay_count_1 <= 0;
+//             delay_count_1_start <= 0;
+//             r_vsync <= 0;
+//         end else begin
+//             // from 0 to 1
+//             if (vsync_pulse && i_vsync) begin
+//                 delay_count_1 <= HZ_TOTAL*v_trans;
+//                 delay_count_1_start <= 1;
+//             end
+//             // from 1 to 0
+//             if (vsync_pulse && ~i_vsync) begin
+//                 delay_count_0 <= HZ_TOTAL*v_trans;
+//                 delay_count_0_start <= 1;
+//             end
+//
+//             // Decrease the counter based on the pixel clock
+//             if (pix_en) begin
+//                 if (delay_count_0_start) begin
+//                     delay_count_0 <= delay_count_0 - 1;
+//                 end
+//                 if (delay_count_1_start) begin
+//                     delay_count_1 <= delay_count_1 - 1;
+//                 end
+//             end
+//
+//             // When the counters are done change the output signal
+//             if ((delay_count_1 == 0) && delay_count_1_start) begin
+//                 delay_count_1_start <= 0;
+//                 r_vsync <= 1;
+//             end
+//
+//             if ((delay_count_0 == 0) && delay_count_0_start) begin
+//                 delay_count_0_start <= 0;
+//                 r_vsync <= 0;
+//             end
+//         end
+//     end
+// endmodule
