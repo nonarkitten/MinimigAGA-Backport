@@ -47,8 +47,9 @@ set_input_delay -clock [get_clocks VIRTUAL_my_i2s_transmitter/max_sclk_OBUF] -cl
 set_input_delay -clock [get_clocks VIRTUAL_my_i2s_transmitter/max_sclk_OBUF] -clock_fall -max -add_delay 0.500 [get_ports sys_reset_in]
 
 # Output delay
-set_output_delay -clock [get_clocks VIRTUAL_clk_200] -min -add_delay -0.400 [get_ports dv_*]
-set_output_delay -clock [get_clocks VIRTUAL_clk_200] -max -add_delay 1.400 [get_ports dv_*]
+set dv_outports [get_ports dv_* -filter {DIRECTION == OUT}]
+set_output_delay -clock [get_clocks VIRTUAL_clk_200] -min -add_delay -0.400 $dv_outports
+set_output_delay -clock [get_clocks VIRTUAL_clk_200] -max -add_delay 1.400 $dv_outports
 #set async_ports_114_out [get_ports {led_* sd_m_*}]
 #set_output_delay -clock [get_clocks VIRTUAL_dll_114] -min -add_delay -5.000 $async_ports_114_out
 #set_output_delay -clock [get_clocks VIRTUAL_dll_114] -max -add_delay 5.000 $async_ports_114_out

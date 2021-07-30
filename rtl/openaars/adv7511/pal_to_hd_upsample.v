@@ -19,8 +19,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
+// Video formats to upscale
+// NTSC 752*525*60Hz = 23688000 Hz
+// PAL  752*625*50Hz = 23500000 Hz
 
-module pal_to_hd_upsample(
+module pal_to_hd_upsample #(
+    parameter PAL_OFFSET_HZ = 'h80,
+    parameter PAL_OFFSET_VT = 0,
+    parameter PAL_HD_H_RES  = 1360,
+    parameter PAL_HD_H_FP   = 0,
+    parameter PAL_HD_FT_BAR = 160
+)(
     input clk,
     input reset,
     // Pal input
@@ -46,13 +55,6 @@ module pal_to_hd_upsample(
     input [7:0]     i_hd_hoffset,
     input [7:0]     i_hd_voffset
 );
-    // constants
-    parameter OFFSET_HZ = 'h80;    // Number of pixels offset to center the screen horizontally (Higher is more to the right)
-    parameter OFFSET_VT = 0;   // Number of Lines to center the screen vertically (NOT IMPLEMENTED YET)
-    parameter HD_H_RES  = 1360; // Resolution of the output signal
-    parameter HD_H_FP   = 0;    // Horizontal front porge, move image to the right
-    parameter HD_FT_BAR = 160;  // The width of the bar before and after the active area when in 4:3 mode
-
     // Output registers
     reg [7:0]   r_hd_r;
     reg [7:0]   r_hd_g;
@@ -147,7 +149,7 @@ module pal_to_hd_upsample(
             r_line_active   <= 1'b0; // Stop counter
             r_line_count    <= 0;  // Reset counter
             r_v_count       <= r_v_count + 1;
-            v_div_var        = (r_line_count[13:6] / (HD_H_RES>>8)) - 1; // Shift numbers to make devider circuit faster
+            v_div_var        = (r_line_count[13:6] / (PAL_HD_H_RES>>8)) - 1; // Shift numbers to make devider circuit faster
             r_pix_clock_dev <= v_div_var[5:0]; // Get the pixel clock relative to the system clock
         end
 
@@ -248,7 +250,7 @@ module pal_to_hd_upsample(
         if (i_hd_four_three) begin
             if (r_hd_clk_ == 1'b1 && i_hd_clk == 1'b0 && ~i_hd_hsync) begin
                 r_h_pos <= r_h_pos + 1;
-                if (r_h_pos > HD_FT_BAR && r_h_pos < (HD_H_RES-HD_FT_BAR)) begin
+                if (r_h_pos > PAL_HD_FT_BAR && r_h_pos < (PAL_HD_H_RES-PAL_HD_FT_BAR)) begin
                     r_addrb <= r_addrb+1;
                     r_hd_r <= w_doutb[0 +: 8];
                     r_hd_g <= w_doutb[8 +: 8];
@@ -262,7 +264,7 @@ module pal_to_hd_upsample(
         end else begin
             if (r_hd_clk_ == 1'b1 && i_hd_clk == 1'b0 && ~i_hd_hsync) begin
                 r_h_pos <= r_h_pos + 1;
-                if (r_h_pos > HD_H_FP && r_h_pos < (HD_H_RES-HD_H_FP)) begin
+                if (r_h_pos > PAL_HD_H_FP && r_h_pos < (PAL_HD_H_RES-PAL_HD_H_FP)) begin
                     r_addrb <= r_addrb+1;
                     r_hd_r <= w_doutb[0 +: 8];
                     r_hd_g <= w_doutb[8 +: 8];
@@ -290,21 +292,21 @@ module pal_to_hd_upsample(
             r_h_pos <= 0; // Reset horizontal counter
             case (r_cur_read_buf)
                 0:
-                    r_addrb <= 14'h0000 - OFFSET_HZ + i_hd_hoffset;
+                    r_addrb <= 14'h0000 - PAL_OFFSET_HZ + i_hd_hoffset;
                 1:
-                    r_addrb <= 14'h0800 - OFFSET_HZ + i_hd_hoffset;
+                    r_addrb <= 14'h0800 - PAL_OFFSET_HZ + i_hd_hoffset;
                 2:
-                    r_addrb <= 14'h1000 - OFFSET_HZ + i_hd_hoffset;
+                    r_addrb <= 14'h1000 - PAL_OFFSET_HZ + i_hd_hoffset;
                 3:
-                    r_addrb <= 14'h1800 - OFFSET_HZ + i_hd_hoffset;
+                    r_addrb <= 14'h1800 - PAL_OFFSET_HZ + i_hd_hoffset;
                 4:
-                    r_addrb <= 14'h2000 - OFFSET_HZ + i_hd_hoffset;
+                    r_addrb <= 14'h2000 - PAL_OFFSET_HZ + i_hd_hoffset;
                 5:
-                    r_addrb <= 14'h2800 - OFFSET_HZ + i_hd_hoffset;
+                    r_addrb <= 14'h2800 - PAL_OFFSET_HZ + i_hd_hoffset;
                 6:
-                    r_addrb <= 14'h3000 - OFFSET_HZ + i_hd_hoffset;
+                    r_addrb <= 14'h3000 - PAL_OFFSET_HZ + i_hd_hoffset;
                 7:
-                    r_addrb <= 14'h3800 - OFFSET_HZ + i_hd_hoffset;
+                    r_addrb <= 14'h3800 - PAL_OFFSET_HZ + i_hd_hoffset;
             endcase
         end
 
@@ -351,7 +353,7 @@ module pal_to_hd_upsample(
     //     .reset(reset),
     //     .pix_en(r_pix_en),      // Pixel clock
     //     .i_vsync(i_hd_vsync),   // Original Vsync signal
-    //     .v_trans(i_hd_voffset + OFFSET_VT),    // Number of lines to translate the vsync down
+    //     .v_trans(i_hd_voffset + PAL_OFFSET_VT),    // Number of lines to translate the vsync down
     //     .o_vsync(o_hd_vsync)    // Delayed HD vsync signal
     // );
 endmodule

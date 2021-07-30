@@ -379,7 +379,7 @@ pal_to_ddr my_pal_to_ddr (
 // Instatiation of the Minimig Core
 minimig_virtual_top 
 #( .debug(1'b0),
-  .havertg(1'b0),
+  .havertg(1'b1),
   .haveaudio(1'b1),
   .havec2p(1'b0),
   .havei2c(1'b1),

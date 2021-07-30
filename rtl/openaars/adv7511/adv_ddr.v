@@ -18,54 +18,90 @@ module adv_ddr
 
 	// OUTPUT
 	output reg clk_pixel_out,   // Output pixel clock after synchronization to clk_ddr
-	output reg de_out,			// Data enable signal
+	output reg de_out = 1'b0,			// Data enable signal
 	output reg vsync_out, hsync_out,
 	output reg [11:0] data_out  // DDR data stream out
 );
 
-reg clk_pixel_, clk_pixel__;
-reg de_in_, de_in__;
+// The amount of pixels before the Data enabled is triggered
+parameter PX_TO_DE = 25;
+parameter V_LINES_TOTAL = 806;
 
-reg vsync_, vsync__;
-reg hsync_, hsync__;
+parameter PY_TO_DE = 32;
+parameter ACT_720P = 720;
 
-reg [23:0] data_, data__;
+// reg clk_pixel_, clk_pixel__;
+reg [2:0] clk_pixel_s;
+// reg de_in_, de_in__;
+reg [1:0] de_in_s;
+
+// reg vsync_, vsync__;
+reg [2:0] vsync_s;
+// reg hsync_, hsync__;
+reg [2:0] hsync_s;
+
+//reg [23:0] data_, data__;
+reg [23:0] data_s [1:0];
+
+// Set and reset Data enable
+reg set_de = 1'b0;
+reg reset_de = 1'b0;
 
 
 // Synchronize signal to clk_ddr
 always @(posedge clk_ddr) begin
-	clk_pixel_ <= clk_pixel;
-	clk_pixel__ <= clk_pixel_;
-
-	de_in_ <= de_in;
-	de_in__ <= de_in_;
-
-	vsync_ <= vsync;
-	vsync__ <= vsync_;
-
-	hsync_ <= hsync;
-	hsync__ <= hsync_;
-
-	data_ <= data;
-	data__ <= data_;
+	clk_pixel_s <= {clk_pixel_s[1], clk_pixel_s[0], clk_pixel};
+	de_in_s <= {de_in_s[0], de_in};
+	vsync_s <= {vsync_s[1], vsync_s[0], vsync};
+	hsync_s <= {hsync_s[1], hsync_s[0], hsync};
+	// Sync 2d array
+	data_s[0] <= data;
+	data_s[1] <= data_s[0];
 end
+
+// line counter
+reg [$clog2(V_LINES_TOTAL):0] v_counter = 0;
+reg                           v_active = 1'b0; // Active reagion 720p
+
+// Make sure the DE lines are only active when data is displayed
+always @(posedge clk_ddr) begin
+	v_active <= 1'b0;
+
+	if (!hsync_s[2] && hsync_s[1]) begin
+		v_counter <= v_counter + 1;
+	end
+
+	// On vsync reset line counter
+	if (vsync_s[1]) begin
+		v_counter <= 0;
+	end
+
+	// Only have the video DE active in the active reagon
+	if ((v_counter > PY_TO_DE) && (v_counter <= (PY_TO_DE + ACT_720P))) begin
+		v_active <= 1'b1;
+	end
+
+	if (reset) begin
+		v_counter <= 0;
+		v_active <= 0;
+	end
+end
+
 
 // Generate DDR signals
 reg clk_pixel_prev = 0;
 reg [1:0] phase_count = 0;
+reg [$clog2(PX_TO_DE):0] de_count = 0;
 always @(posedge clk_ddr) begin
 	if (reset) begin
 		clk_pixel_prev <= 0;
 		phase_count <= 0;
 	end else begin
-
-		clk_pixel_prev <= clk_pixel__;
-
 		// Next phase
 		phase_count <= phase_count + 1; 
 
 		// Handle positive pixel clock edge
-		if (!clk_pixel_prev && clk_pixel__) begin
+		if (!clk_pixel_s[2] && clk_pixel_s[1]) begin
 			phase_count <= 0;
 		end
 
@@ -73,21 +109,42 @@ always @(posedge clk_ddr) begin
 		case (phase_count)
 			2'b00: begin
 				// Output the lower (1st) part
-				data_out <= data__[11:0];
+				data_out <= data_s[1][11:0];
 				// Output vsync and hsync as well
-				vsync_out <= vsync__;
-				hsync_out <= hsync__;
+				vsync_out <= vsync_s[1];
+				hsync_out <= hsync_s[1];
 				// Generate data enable
-				de_out <= de_in__;
+				if (de_count == PX_TO_DE) begin
+					de_out <= 1'b1;
+					set_de <= 1'b0;
+				end
+				if (reset_de == 1'b1) begin
+					de_out <= 1'b0;
+					reset_de <= 1'b0;
+				end
 			end
 			2'b10: begin
 				// Output the high (2nd) part
-				data_out <= data__[23:12];
+				data_out <= data_s[1][23:12];
+				// Handle pixel counter to Data enable
+				if (set_de) begin
+					de_count <= de_count + 1;
+				end else de_count <= 0;
 			end
 		endcase
 
 		// Output synchronized pixel clock 
-		clk_pixel_out <= clk_pixel__;
+		clk_pixel_out <= clk_pixel_s[1];
+	end
+
+	// Negative edge set
+	if (hsync_s[2] && !hsync_s[1] && v_active) begin
+		set_de <= 1'b1;
+	end
+
+	// Positive edge reset
+	if (!hsync_s[2] && hsync_s[1]) begin
+		reset_de <= 1'b1;
 	end
 end
 
