@@ -107,7 +107,7 @@ module minimig_openaars_top (
 wire        clk_in;
 wire        clk_28;
 wire        clk_114;
-wire        clk_200;
+wire        clk_100;
 wire        clk_fb_main;
 wire        pll_locked_main;
 wire        pll_locked_minimig;
@@ -257,7 +257,7 @@ PLLE2_BASE #(
   .CLKFBOUT_MULT(20),       // 1000  MHz 
   .CLKFBOUT_PHASE(0.000),   // No offset
   .CLKIN1_PERIOD(20),       // 50      MHz (20 ns)
-  .CLKOUT0_DIVIDE(5),       // 200    MHz /4 divide
+  .CLKOUT0_DIVIDE(10),       // 200    MHz /4 divide
   .DIVCLK_DIVIDE(1),
   .REF_JITTER1(0.010)
 ) clk_hdmi (
@@ -266,7 +266,7 @@ PLLE2_BASE #(
   .CLKIN1(clk_50),
   .CLKFBIN(clk_fb_main),
   .CLKFBOUT(clk_fb_main),
-  .CLKOUT0(clk_200),        //  200 MHz HDMI base clock
+  .CLKOUT0(clk_100),        //  100 MHz HDMI base clock
   .LOCKED(pll_locked_main)
 );
 
@@ -355,7 +355,8 @@ i2c_sender myi2c_sender (
 // Video signal to dual data rate
 // To save pins on the FPGA
 pal_to_ddr my_pal_to_ddr (
-  .clk(clk_200),
+  .clk(clk_100),
+  .clk_114(clk_114),
   .reset(~reset_n),
   // Input PAL
   .i_pal_vsync(!vga_vs),

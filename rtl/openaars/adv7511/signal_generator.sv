@@ -1,17 +1,17 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company:
-// Engineer:
+// Company: deFEEST 8-bit entertainement
+// Engineer: Paul Honig
 //
 // Create Date: 01/02/2020 09:52:37 PM
 // Design Name:
 // Module Name: signal_generator
-// Project Name:
-// Target Devices:
-// Tool Versions:
-// Description:
+// Project Name: Minimig OpenAARS
+// Target Devices: Xilinx FPGA's
+// Tool Versions: Vivado 2019 -  2021
+// Description: HDMI 720p video signal generator
 //
-// Dependencies:
+// Dependencies: 
 //
 // Revision:
 // Revision 0.01 - File Created
@@ -109,16 +109,17 @@ assign o_g = r_g;
 assign o_b = r_b;
 
 // Clock devider block
-reg [1:0] r_dev_cnt = 0;
+reg r_dev_cnt = 1'b0;
 always @(posedge clk) begin
     if(reset) begin
         r_dev_cnt = 0;
+        r_clock_dev <= 1'b0;
     end else begin
-        r_dev_cnt <= r_dev_cnt + 1;
+        r_dev_cnt <= ~r_dev_cnt;
 
         r_vid_enable <= 1'b0;
-        r_clock_dev <= r_dev_cnt[1];
-        if (r_dev_cnt == 2'b00) begin
+        r_clock_dev <= r_dev_cnt;
+        if (r_dev_cnt == 1'b0) begin
             r_vid_enable <= 1'b1;
         end
     end
@@ -131,7 +132,6 @@ reg vt_count_enable = 1'b0;
 reg hz_region_act;
 // reg hz_region_sync;
 reg vt_region_act;
-reg [$clog2(PAL_HZ_TOTAL):0] r_hz_total = 0;
 
 // Generate the HSYNC/VSYNC front back porch pattern
 //
@@ -240,6 +240,5 @@ end
 
 // generate ADV data enable signal
 assign o_adv_de = DE_POL ? (hz_region_act & vt_region_act) : !(hz_region_act & vt_region_act);
-
 
 endmodule

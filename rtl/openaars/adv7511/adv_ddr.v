@@ -8,7 +8,7 @@
 module adv_ddr 
 (
 	// INPUT
-	input clk_ddr,			// DDR clock at 4xpixel clock
+	input clk,			// DDR clock at 4xpixel clock
 	input clk_pixel,        // Pixel clock
 	input reset,
 	
@@ -17,7 +17,7 @@ module adv_ddr
 	input [23:0 ] data,     // Pixel data in 24-bpp
 
 	// OUTPUT
-	output reg clk_pixel_out,   // Output pixel clock after synchronization to clk_ddr
+	output reg clk_pixel_out,   // Output pixel clock after synchronization to clk
 	output reg de_out = 1'b0,			// Data enable signal
 	output reg vsync_out, hsync_out,
 	output reg [11:0] data_out  // DDR data stream out
@@ -25,10 +25,12 @@ module adv_ddr
 
 // The amount of pixels before the Data enabled is triggered
 parameter PX_TO_DE = 25;
-parameter V_LINES_TOTAL = 806;
+parameter PX_ACT_DE = 1280;
+parameter PX_TOTAL = 1360;
 
-parameter PY_TO_DE = 32;
+parameter PY_TO_DE = 9;
 parameter ACT_720P = 720;
+parameter V_LINES_TOTAL = 806;
 
 // reg clk_pixel_, clk_pixel__;
 reg [2:0] clk_pixel_s;
@@ -48,8 +50,8 @@ reg set_de = 1'b0;
 reg reset_de = 1'b0;
 
 
-// Synchronize signal to clk_ddr
-always @(posedge clk_ddr) begin
+// Synchronize signal to clk
+always @(posedge clk) begin
 	clk_pixel_s <= {clk_pixel_s[1], clk_pixel_s[0], clk_pixel};
 	de_in_s <= {de_in_s[0], de_in};
 	vsync_s <= {vsync_s[1], vsync_s[0], vsync};
@@ -64,7 +66,7 @@ reg [$clog2(V_LINES_TOTAL):0] v_counter = 0;
 reg                           v_active = 1'b0; // Active reagion 720p
 
 // Make sure the DE lines are only active when data is displayed
-always @(posedge clk_ddr) begin
+always @(posedge clk) begin
 	v_active <= 1'b0;
 
 	if (!hsync_s[2] && hsync_s[1]) begin
@@ -90,61 +92,67 @@ end
 
 // Generate DDR signals
 reg clk_pixel_prev = 0;
-reg [1:0] phase_count = 0;
-reg [$clog2(PX_TO_DE):0] de_count = 0;
-always @(posedge clk_ddr) begin
+reg phase_count = 0;
+reg [$clog2(PX_TOTAL):0] px_count = 0;
+always @(posedge clk) begin
+	set_de <= 1'b0;
+	reset_de <= 1'b0;
+
 	if (reset) begin
 		clk_pixel_prev <= 0;
 		phase_count <= 0;
+		px_count <= 0;
 	end else begin
 		// Next phase
-		phase_count <= phase_count + 1; 
+		phase_count <= ~phase_count; 
 
 		// Handle positive pixel clock edge
-		if (!clk_pixel_s[2] && clk_pixel_s[1]) begin
-			phase_count <= 0;
-		end
+		// if (!clk_pixel_s[2] && clk_pixel_s[1]) begin
+		// 	phase_count <= 0;
+		// end
 
 		// Do actions according to phases
-		case (phase_count)
-			2'b00: begin
-				// Output the lower (1st) part
-				data_out <= data_s[1][11:0];
-				// Output vsync and hsync as well
-				vsync_out <= vsync_s[1];
-				hsync_out <= hsync_s[1];
-				// Generate data enable
-				if (de_count == PX_TO_DE) begin
-					de_out <= 1'b1;
-					set_de <= 1'b0;
-				end
-				if (reset_de == 1'b1) begin
-					de_out <= 1'b0;
-					reset_de <= 1'b0;
-				end
-			end
-			2'b10: begin
-				// Output the high (2nd) part
-				data_out <= data_s[1][23:12];
-				// Handle pixel counter to Data enable
-				if (set_de) begin
-					de_count <= de_count + 1;
-				end else de_count <= 0;
-			end
-		endcase
+		if (phase_count == 1'b0) begin // Phase 0
+			// Output the lower (1st) part
+			data_out <= data_s[1][11:0];
+			// Output vsync and hsync as well
+			vsync_out <= vsync_s[1];
+			hsync_out <= hsync_s[1];
+			// Generate data enable
+		end else begin
+			// Output the high (2nd) part
+			data_out <= data_s[1][23:12];
+			// Handle pixel counter to Data enable
+			px_count <= px_count + 1;
+			// Generate data enable
+			if (px_count == PX_TO_DE && v_active) set_de <= 1'b1;
+			if (px_count == (PX_TO_DE + PX_ACT_DE)) reset_de <= 1'b1;
+			if (hsync_s[1]) px_count <= 0;
+		end
 
 		// Output synchronized pixel clock 
 		clk_pixel_out <= clk_pixel_s[1];
 	end
 
 	// Negative edge set
-	if (hsync_s[2] && !hsync_s[1] && v_active) begin
-		set_de <= 1'b1;
-	end
+	// if (hsync_s[2] && !hsync_s[1] && v_active) begin
+	// 	set_de <= 1'b1;
+	// end
 
 	// Positive edge reset
-	if (!hsync_s[2] && hsync_s[1]) begin
-		reset_de <= 1'b1;
+	// if (!hsync_s[2] && hsync_s[1]) begin
+	// 	reset_de <= 1'b1;
+	// end
+end
+
+// 180 degrees later switch the data enable
+always @(negedge clk) begin
+	if (set_de) begin
+		de_out <= 1'b1;	
+	end
+
+	if (reset_de) begin
+		de_out <= 1'b0;
 	end
 end
 

@@ -20,7 +20,10 @@
 //////////////////////////////////////////////////////////////////////////////////
 module pal_to_ddr(
         input clk,
+        input clk_114,
         input reset,
+        // VGA input
+        input vga_clk_pixel,
         // Pal input
         input i_pal_hsync,
         input i_pal_vsync,
@@ -67,56 +70,76 @@ module pal_to_ddr(
     wire [7:0] w_60_o_g;
     wire [7:0] w_60_o_b;
 
-    reg _i_pal_hsync;
-    reg __i_pal_hsync;
-    reg _i_pal_vsync;
-    reg __i_pal_vsync;
-    reg [7:0] _i_pal_r;
-    reg [7:0] __i_pal_r;
-    reg [7:0] _i_pal_g;
-    reg [7:0] __i_pal_g;
-    reg [7:0] _i_pal_b;
-    reg [7:0] __i_pal_b;
+    reg  [2:0] s_pal_hsync;
+    wire       w_pal_hsync;
+    reg  [2:0] s_pal_vsync;
+    wire       w_pal_vsync;
+    reg  [7:0] s_pal_r;
+    wire [7:0] w_pal_r;
+    reg  [7:0] s_pal_g [0:1];
+    wire [7:0] w_pal_g;
+    reg  [7:0] s_pal_b [0:1];
+    wire [7:0] w_pal_b;
 
     reg [7:0] r_hoffset [0:1];
     reg [7:0] r_voffset [0:1];
 
     // Synchronize the signal
     always @(posedge clk) begin
-        // Hsync
-        _i_pal_hsync  <= i_pal_hsync;
-        __i_pal_hsync <= _i_pal_hsync;
-        // Vsync
-        _i_pal_vsync  <= i_pal_vsync;
-        __i_pal_vsync <= _i_pal_vsync;
-        // Red
-        _i_pal_r      <= i_pal_r;
-        __i_pal_r     <= _i_pal_r;
-        // Green
-        _i_pal_g      <= i_pal_g;
-        __i_pal_g     <= _i_pal_g;
-        // Blue
-        _i_pal_b      <= i_pal_b;
-        __i_pal_b     <= _i_pal_b;
+        // Hsync/Vsync
+        s_pal_hsync <= {s_pal_hsync[1], s_pal_hsync[0], i_pal_hsync};
+        s_pal_vsync <= {s_pal_vsync[1], s_pal_vsync[0], i_pal_vsync};
+        // Red/Green/Blue
+        s_pal_r       <= { s_pal_r[0], i_pal_r };
+        s_pal_g       <= { s_pal_g[0], i_pal_g };
+        s_pal_b       <= { s_pal_b[0], i_pal_b };
         // Offset registers
         r_hoffset     <= {r_hoffset[1], i_hoffset};
         r_voffset     <= {r_voffset[1], i_voffset};
     end
 
+    assign w_pal_r = s_pal_r[1];
+    assign w_pal_g = s_pal_g[1];
+    assign w_pal_b = s_pal_b[1];
+    assign w_pal_hsync = s_pal_hsync[1];
+    assign w_pal_vsync = s_pal_vsync[1];
+
+    // Detect number of horizontal lines in video in
+    localparam SEL_INT_CLK = 1'b0;
+    localparam SEL_SRC_CLK = 1'b1;
+    reg [$clog2(1000):0] hz_in_count = 0;
+    reg                  r_passthrough = SEL_INT_CLK;
+
+    always @(posedge clk) begin
+        if (s_pal_hsync[2] == 1'b0 && s_pal_hsync[1] == 1'b1) begin
+          hz_in_count <= hz_in_count + 1; 
+        end
+
+        if (s_pal_vsync[2] == 1'b1 && s_pal_hsync[1] == 1'b0) begin
+            r_passthrough <= SEL_INT_CLK;
+            // When there are more than 400 lines in the video signal,
+            // Assume it's VGA and pass it through 
+            if (hz_in_count > 400) begin
+                r_passthrough <= SEL_SRC_CLK;
+            end
+            hz_in_count <= 0;
+        end
+    end
+
     // Detect FPS
-    (* mark_debug = "true" *)
     wire [$clog2(100):0] cur_fps; 
-    wire                   fps_valid;
-    (* mark_debug = "true" *)
-    reg                    r_50hz = 1'b0;
-    reg                    r_60hz = 1'b0;
+    wire                 fps_valid;
+    reg                  r_50hz = 1'b0;
+    reg                  r_60hz = 1'b0;
     frame_freq myfreq(
         .clk(clk),
-        .reset(1'b0),
-        .i_vsync(__i_pal_vsync),
+        .reset(reset),
+        .i_vsync(w_pal_vsync),
         .o_freq(cur_fps),        // 7 bits frequency, 2 bits fraction
         .o_valid(fps_valid)      // 
     );
+
+    // Depending on frame rate switch 50/60Hz
     always @(posedge clk) begin
         r_50hz <= 1'b0;
         r_60hz <= 1'b0;
@@ -163,11 +186,11 @@ module pal_to_ddr(
         .clk(clk),
         .reset(reset),
         // Pal input
-        .i_pal_hsync(__i_pal_hsync),
-        .i_pal_vsync(__i_pal_vsync),
-        .i_pal_r(__i_pal_r),
-        .i_pal_g(__i_pal_g),
-        .i_pal_b(__i_pal_b),
+        .i_pal_hsync(w_pal_hsync),
+        .i_pal_vsync(w_pal_vsync),
+        .i_pal_r(w_pal_r),
+        .i_pal_g(w_pal_g),
+        .i_pal_b(w_pal_b),
         // HD upsampled output
         .o_hd_r(w_50_r),
         .o_hd_g(w_50_g),
@@ -222,11 +245,11 @@ module pal_to_ddr(
         .clk(clk),
         .reset(reset),
         // Pal input
-        .i_pal_hsync(__i_pal_hsync),
-        .i_pal_vsync(__i_pal_vsync),
-        .i_pal_r(__i_pal_r),
-        .i_pal_g(__i_pal_g),
-        .i_pal_b(__i_pal_b),
+        .i_pal_hsync(w_pal_hsync),
+        .i_pal_vsync(w_pal_vsync),
+        .i_pal_r(w_pal_r),
+        .i_pal_g(w_pal_g),
+        .i_pal_b(w_pal_b),
         // HD upsampled output
         .o_hd_r(w_60_r),
         .o_hd_g(w_60_g),
@@ -286,11 +309,11 @@ module pal_to_ddr(
     assign w_o_r     = r_50hz ? w_50_o_r : w_60_o_r;
     assign w_o_g     = r_50hz ? w_50_o_g : w_60_o_g;
     assign w_o_b     = r_50hz ? w_50_o_b : w_60_o_b;
-    
+
     // ADV DDR output
     adv_ddr myadr_ddr (
         // INPUT
-        .clk_ddr(clk),            // DDR clock at 4xpixel clock
+        .clk(clk),            // DDR clock at 4xpixel clock
         .reset(reset),
         .clk_pixel(w_adv_clk),        // Pixel clock
 
