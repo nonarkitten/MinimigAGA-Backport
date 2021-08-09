@@ -19,17 +19,29 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
+//  74.2MHz
+// 	{ XVIDC_VM_1280x720_50_P, "1280x720@50Hz", XVIDC_FR_50HZ,
+//		{1280, 440, 40, 220, 1980, 1,
+//		720, 5, 5, 20, 750, 0, 0, 0, 0, 1} },
 
 module signal_generator
 #(
+    // parameter PAL_HZ_ACT_PIX = 1280,
+    // parameter PAL_HZ_FRONT_PORCH = 8,
+    // parameter PAL_HZ_SYNC_WIDTH = 32,
+    // parameter PAL_HZ_BACK_PORCH = 38,
+    // parameter PAL_VT_ACT_LN = 720,
+    // parameter PAL_VT_FRONT_PORCH = 3,
+    // parameter PAL_VT_SYNC_WIDTH = 7,
+    // parameter PAL_VT_BACK_PORCH = 9
     parameter PAL_HZ_ACT_PIX = 1280,
-    parameter PAL_HZ_FRONT_PORCH = 8,
-    parameter PAL_HZ_SYNC_WIDTH = 32,
-    parameter PAL_HZ_BACK_PORCH = 38,
+    parameter PAL_HZ_FRONT_PORCH = 440,
+    parameter PAL_HZ_SYNC_WIDTH = 40,
+    parameter PAL_HZ_BACK_PORCH = 220,
     parameter PAL_VT_ACT_LN = 720,
     parameter PAL_VT_FRONT_PORCH = 3,
-    parameter PAL_VT_SYNC_WIDTH = 7,
-    parameter PAL_VT_BACK_PORCH = 9
+    parameter PAL_VT_SYNC_WIDTH = 5,
+    parameter PAL_VT_BACK_PORCH = 20
 )(
     input clk,
     input reset,
@@ -208,12 +220,16 @@ always @(posedge clk) begin
             // Horizontal sync
             r_hsync <= SYNC_POL;
             // Vertical sync
-            r_vsync <= !SYNC_POL;
+            // r_vsync <= !SYNC_POL;
             if ((vt_count > (PAL_VT_ACT_LN + PAL_VT_FRONT_PORCH)) &
                 (vt_count < (PAL_VT_ACT_LN + PAL_VT_FRONT_PORCH + PAL_VT_SYNC_WIDTH))) begin
                 r_vsync <= SYNC_POL;
-            end
+            end 
         end
+        if (i_frame_end) begin
+            r_vsync <= !SYNC_POL;
+        end
+
 
         // VERTICAL
 

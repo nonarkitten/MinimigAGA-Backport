@@ -8,8 +8,8 @@
 module adv_ddr 
 (
 	// INPUT
-	input clk,			// DDR clock at 4xpixel clock
-	input clk_pixel,        // Pixel clock
+	input clk_out,			// DDR clock at 4xpixel clock
+	input clk_in,        // Pixel clock
 	input reset,
 	
 	input de_in,		// Used to generate DE
@@ -17,18 +17,22 @@ module adv_ddr
 	input [23:0 ] data,     // Pixel data in 24-bpp
 
 	// OUTPUT
-	output reg clk_pixel_out,   // Output pixel clock after synchronization to clk
+	output reg clk_pixel_out,   // Output pixel clock after synchronization to clk_out
 	output reg de_out = 1'b0,			// Data enable signal
 	output reg vsync_out, hsync_out,
 	output reg [11:0] data_out  // DDR data stream out
 );
 
 // The amount of pixels before the Data enabled is triggered
-parameter PX_TO_DE = 25;
+//
+// 	{ XVIDC_VM_1280x720_50_P, "1280x720@50Hz", XVIDC_FR_50HZ,
+//		{1280, 440, 40, 220, 1980, 1,
+//		720, 5, 5, 20, 750, 0, 0, 0, 0, 1} },
+parameter PX_TO_DE = 36;
 parameter PX_ACT_DE = 1280;
 parameter PX_TOTAL = 1360;
 
-parameter PY_TO_DE = 9;
+parameter PY_TO_DE = 5;
 parameter ACT_720P = 720;
 parameter V_LINES_TOTAL = 806;
 
@@ -50,9 +54,9 @@ reg set_de = 1'b0;
 reg reset_de = 1'b0;
 
 
-// Synchronize signal to clk
-always @(posedge clk) begin
-	clk_pixel_s <= {clk_pixel_s[1], clk_pixel_s[0], clk_pixel};
+// Synchronize signal to clk_out
+always @(posedge clk_out) begin
+	clk_pixel_s <= {clk_pixel_s[1], clk_pixel_s[0], clk_in};
 	de_in_s <= {de_in_s[0], de_in};
 	vsync_s <= {vsync_s[1], vsync_s[0], vsync};
 	hsync_s <= {hsync_s[1], hsync_s[0], hsync};
@@ -66,15 +70,15 @@ reg [$clog2(V_LINES_TOTAL):0] v_counter = 0;
 reg                           v_active = 1'b0; // Active reagion 720p
 
 // Make sure the DE lines are only active when data is displayed
-always @(posedge clk) begin
+always @(posedge clk_out) begin
 	v_active <= 1'b0;
 
-	if (!hsync_s[2] && hsync_s[1]) begin
+	if (hsync_s[2:1] == 2'b01) begin
 		v_counter <= v_counter + 1;
 	end
 
 	// On vsync reset line counter
-	if (vsync_s[1]) begin
+	if (vsync_s[2:1] == 2'b10) begin
 		v_counter <= 0;
 	end
 
@@ -94,10 +98,8 @@ end
 reg clk_pixel_prev = 0;
 reg phase_count = 0;
 reg [$clog2(PX_TOTAL):0] px_count = 0;
-always @(posedge clk) begin
-	set_de <= 1'b0;
+always @(posedge clk_out) begin
 	reset_de <= 1'b0;
-
 	if (reset) begin
 		clk_pixel_prev <= 0;
 		phase_count <= 0;
@@ -107,26 +109,26 @@ always @(posedge clk) begin
 		phase_count <= ~phase_count; 
 
 		// Handle positive pixel clock edge
-		// if (!clk_pixel_s[2] && clk_pixel_s[1]) begin
-		// 	phase_count <= 0;
-		// end
+		if (!clk_pixel_s[2] && clk_pixel_s[1]) begin
+			phase_count <= 1'b0;
+		end
 
 		// Do actions according to phases
-		if (phase_count == 1'b0) begin // Phase 0
+		if (phase_count == 1'b1) begin // Phase 0
 			// Output the lower (1st) part
 			data_out <= data_s[1][11:0];
 			// Output vsync and hsync as well
 			vsync_out <= vsync_s[1];
 			hsync_out <= hsync_s[1];
 			// Generate data enable
+			if (px_count == PX_TO_DE && v_active) set_de <= ~set_de;
+			if (px_count == (PX_TO_DE + PX_ACT_DE)) reset_de <= 1'b1;
 		end else begin
 			// Output the high (2nd) part
 			data_out <= data_s[1][23:12];
 			// Handle pixel counter to Data enable
 			px_count <= px_count + 1;
-			// Generate data enable
-			if (px_count == PX_TO_DE && v_active) set_de <= 1'b1;
-			if (px_count == (PX_TO_DE + PX_ACT_DE)) reset_de <= 1'b1;
+			// Reset horizontal counter
 			if (hsync_s[1]) px_count <= 0;
 		end
 
@@ -146,9 +148,15 @@ always @(posedge clk) begin
 end
 
 // 180 degrees later switch the data enable
-always @(negedge clk) begin
-	if (set_de) begin
-		de_out <= 1'b1;	
+reg [1:0] r_neg_set_de = 2'b00;
+always @(negedge clk_out) begin
+
+	if (clk_pixel_out == 1'b0) begin
+		r_neg_set_de <= {r_neg_set_de[0], set_de};
+
+		if (r_neg_set_de[1] != r_neg_set_de[0]) begin
+			de_out <= 1'b1;	
+		end
 	end
 
 	if (reset_de) begin

@@ -258,7 +258,6 @@ assign SDRAM_BA         = sdram_ba;
 assign pll_rst          = 1'b0;
 assign sdctl_rst        = PLL_LOCKED & RESET_N;
 
-
 // RTG support...
 
 wire rtg_ena; // RTG screen on/off

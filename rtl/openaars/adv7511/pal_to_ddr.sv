@@ -74,35 +74,41 @@ module pal_to_ddr(
     wire       w_pal_hsync;
     reg  [2:0] s_pal_vsync;
     wire       w_pal_vsync;
-    reg  [7:0] s_pal_r;
+    reg  [7:0] s_pal_r [0:1];
     wire [7:0] w_pal_r;
     reg  [7:0] s_pal_g [0:1];
     wire [7:0] w_pal_g;
     reg  [7:0] s_pal_b [0:1];
     wire [7:0] w_pal_b;
 
-    reg [7:0] r_hoffset [0:1];
-    reg [7:0] r_voffset [0:1];
+    // reg [7:0] r_hoffset [0:1];
+    // reg [7:0] r_voffset [0:1];
 
     // Synchronize the signal
-    always @(posedge clk) begin
-        // Hsync/Vsync
-        s_pal_hsync <= {s_pal_hsync[1], s_pal_hsync[0], i_pal_hsync};
-        s_pal_vsync <= {s_pal_vsync[1], s_pal_vsync[0], i_pal_vsync};
-        // Red/Green/Blue
-        s_pal_r       <= { s_pal_r[0], i_pal_r };
-        s_pal_g       <= { s_pal_g[0], i_pal_g };
-        s_pal_b       <= { s_pal_b[0], i_pal_b };
-        // Offset registers
-        r_hoffset     <= {r_hoffset[1], i_hoffset};
-        r_voffset     <= {r_voffset[1], i_voffset};
-    end
+    // always @(posedge clk_in) begin
+    //     // Hsync/Vsync
+    //     s_pal_hsync <= {s_pal_hsync[1], s_pal_hsync[0], i_pal_hsync};
+    //     s_pal_vsync <= {s_pal_vsync[1], s_pal_vsync[0], i_pal_vsync};
+    //     // Red/Green/Blue
+    //     s_pal_r       <= { s_pal_r[0], i_pal_r };
+    //     s_pal_g       <= { s_pal_g[0], i_pal_g };
+    //     s_pal_b       <= { s_pal_b[0], i_pal_b };
+    //     // Offset registers
+    //     r_hoffset     <= {r_hoffset[1], i_hoffset};
+    //     r_voffset     <= {r_voffset[1], i_voffset};
+    // end
 
-    assign w_pal_r = s_pal_r[1];
-    assign w_pal_g = s_pal_g[1];
-    assign w_pal_b = s_pal_b[1];
-    assign w_pal_hsync = s_pal_hsync[1];
-    assign w_pal_vsync = s_pal_vsync[1];
+    // assign w_pal_r = s_pal_r[1];
+    // assign w_pal_g = s_pal_g[1];
+    // assign w_pal_b = s_pal_b[1];
+    // assign w_pal_hsync = s_pal_hsync[1];
+    // assign w_pal_vsync = s_pal_vsync[1];
+
+    assign w_pal_r = i_pal_r;
+    assign w_pal_g = i_pal_g;
+    assign w_pal_b = i_pal_b;
+    assign w_pal_hsync = i_pal_hsync;
+    assign w_pal_vsync = i_pal_vsync;
 
     // Detect number of horizontal lines in video in
     localparam SEL_INT_CLK = 1'b0;
@@ -181,9 +187,10 @@ module pal_to_ddr(
 
     // Upscale the video signal using a line buffer
     pal_to_hd_upsample #(
-        .PAL_HD_H_RES(1360)
+        .PAL_HD_H_RES(1980)
     ) my50hzupsample(
-        .clk(clk),
+        .clk_out(clk),
+        .clk_in(clk_114),
         .reset(reset),
         // Pal input
         .i_pal_hsync(w_pal_hsync),
@@ -204,20 +211,20 @@ module pal_to_ddr(
         .i_hd_clk(w_50_adv_clk),
         .i_hd_four_three(1'b0),
         // horizontal and vertical offsets
-        .i_hd_hoffset(r_hoffset[0]),
-        .i_hd_voffset(r_voffset[0])
+        .i_hd_hoffset(i_voffset),
+        .i_hd_voffset(i_voffset)
     );
 
     // Generate the 720p Hsync and Vsync signals
     signal_generator #(
         .PAL_HZ_ACT_PIX(1280),
-        .PAL_HZ_FRONT_PORCH(8),
-        .PAL_HZ_SYNC_WIDTH(32),
-        .PAL_HZ_BACK_PORCH(38),
+        .PAL_HZ_FRONT_PORCH(440),
+        .PAL_HZ_SYNC_WIDTH(40),
+        .PAL_HZ_BACK_PORCH(220),
         .PAL_VT_ACT_LN(720),
-        .PAL_VT_FRONT_PORCH(3),
-        .PAL_VT_SYNC_WIDTH(7),
-        .PAL_VT_BACK_PORCH(9)
+        .PAL_VT_FRONT_PORCH(5),
+        .PAL_VT_SYNC_WIDTH(5),
+        .PAL_VT_BACK_PORCH(20)
     ) hd_50hz_gen(
         .clk(clk),
         .reset(reset),
@@ -240,9 +247,10 @@ module pal_to_ddr(
 
     // Upscale the video signal using a line buffer
     pal_to_hd_upsample #(
-        .PAL_HD_H_RES(1107) // Total pixels in a line
+        .PAL_HD_H_RES(1650) // Total pixels in a line
     ) my60hzupsample (
-        .clk(clk),
+        .clk_out(clk),
+        .clk_in(clk_114),
         .reset(reset),
         // Pal input
         .i_pal_hsync(w_pal_hsync),
@@ -263,20 +271,20 @@ module pal_to_ddr(
         .i_hd_clk(w_50_adv_clk),
         .i_hd_four_three(1'b0),
         // horizontal and vertical offsets
-        .i_hd_hoffset(r_hoffset[0]),
-        .i_hd_voffset(r_voffset[0])
+        .i_hd_hoffset(i_hoffset),
+        .i_hd_voffset(i_voffset[0])
     );
 
     // Generate the 720p Hsync and Vsync signals
     signal_generator #(
-        .PAL_HZ_ACT_PIX(862),
-        .PAL_HZ_FRONT_PORCH(74),
-        .PAL_HZ_SYNC_WIDTH(27),
-        .PAL_HZ_BACK_PORCH(148),
+        .PAL_HZ_ACT_PIX(1280),
+        .PAL_HZ_FRONT_PORCH(110),
+        .PAL_HZ_SYNC_WIDTH(40),
+        .PAL_HZ_BACK_PORCH(220),
         .PAL_VT_ACT_LN(720),
         .PAL_VT_FRONT_PORCH(5),
         .PAL_VT_SYNC_WIDTH(5),
-        .PAL_VT_BACK_PORCH(30)
+        .PAL_VT_BACK_PORCH(20)
     ) hd_60hz_gen(
         .clk(clk),
         .reset(reset),
@@ -313,9 +321,10 @@ module pal_to_ddr(
     // ADV DDR output
     adv_ddr myadr_ddr (
         // INPUT
-        .clk(clk),            // DDR clock at 4xpixel clock
+        .clk_out(clk),            // DDR clock at 4xpixel clock
+        .clk_in(w_adv_clk),        // Pixel clock
+
         .reset(reset),
-        .clk_pixel(w_adv_clk),        // Pixel clock
 
         .de_in(w_adv_de),       // Used to generate DE
         .hsync(w_hd_hsync),
