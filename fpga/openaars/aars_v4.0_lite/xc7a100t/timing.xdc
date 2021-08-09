@@ -2,7 +2,6 @@
 create_clock -period 20.000 -name clk_50 -waveform {0.000 10.000} [get_ports clk_50]
 create_clock -period 8.713 -name VIRTUAL_dll_114 -waveform {0.000 4.356}
 create_clock -period 34.851 -name VIRTUAL_dll_28 -waveform {0.000 17.426}
-create_clock -period 5.000 -name VIRTUAL_clk_200 -waveform {0.000 2.500}
 create_clock -period 1115.248 -name VIRTUAL_openaars_virtual_top/mycfide/sck_reg_n_0 -waveform {0.000 557.624}
 create_clock -period 636.040 -name VIRTUAL_my_i2s_transmitter/max_sclk_OBUF -waveform {0.000 318.020}
 
@@ -47,9 +46,6 @@ set_input_delay -clock [get_clocks VIRTUAL_my_i2s_transmitter/max_sclk_OBUF] -cl
 set_input_delay -clock [get_clocks VIRTUAL_my_i2s_transmitter/max_sclk_OBUF] -clock_fall -max -add_delay 0.500 [get_ports sys_reset_in]
 
 # Output delay
-set dv_outports [get_ports dv_* -filter {DIRECTION == OUT}]
-set_output_delay -clock [get_clocks VIRTUAL_clk_200] -min -add_delay -0.400 $dv_outports
-set_output_delay -clock [get_clocks VIRTUAL_clk_200] -max -add_delay 1.400 $dv_outports
 #set async_ports_114_out [get_ports {led_* sd_m_*}]
 #set_output_delay -clock [get_clocks VIRTUAL_dll_114] -min -add_delay -5.000 $async_ports_114_out
 #set_output_delay -clock [get_clocks VIRTUAL_dll_114] -max -add_delay 5.000 $async_ports_114_out
@@ -97,4 +93,7 @@ set_false_path -from [get_clocks openaars_virtual_top/mycfide/sck_reg_n_0]
 set_false_path -from [get_clocks my_i2s_transmitter/max_sclk_OBUF]
 set_false_path -to [get_clocks my_i2s_transmitter/max_sclk_OBUF]
 set_false_path -to [get_clocks openaars_virtual_top/mycfide/sck_reg_n_0]
+
+
+
 

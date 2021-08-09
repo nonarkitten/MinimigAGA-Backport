@@ -10,3 +10,4 @@ set_property -dict {PACKAGE_PIN M1 IOSTANDARD LVTTL} [get_ports max_i2s]
 # set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVTTL} [ get_ports {dv_i2s[0]}]
 # set_property -dict {PACKAGE_PIN H21 IOSTANDARD LVTTL} [ get_ports {dv_i2s[1]}]
 
+

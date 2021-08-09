@@ -36,3 +36,4 @@ set_property -dict {PACKAGE_PIN U22 IOSTANDARD LVTTL} [get_ports clk_50]
 # Reset input button
 set_property -dict {PACKAGE_PIN Y25 IOSTANDARD LVTTL} [get_ports sys_reset_in]
 
+

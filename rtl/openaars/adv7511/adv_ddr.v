@@ -96,25 +96,25 @@ end
 
 // Generate DDR signals
 reg clk_pixel_prev = 0;
-reg phase_count = 0;
+// reg phase_count = 0;
 reg [$clog2(PX_TOTAL):0] px_count = 0;
 always @(posedge clk_out) begin
 	reset_de <= 1'b0;
 	if (reset) begin
 		clk_pixel_prev <= 0;
-		phase_count <= 0;
+		// phase_count <= 0;
 		px_count <= 0;
 	end else begin
 		// Next phase
-		phase_count <= ~phase_count; 
+		// phase_count <= ~phase_count; 
 
 		// Handle positive pixel clock edge
-		if (!clk_pixel_s[2] && clk_pixel_s[1]) begin
-			phase_count <= 1'b0;
-		end
+		// if (!clk_pixel_s[2] && clk_pixel_s[1]) begin
+		// 	phase_count <= 1'b0;
+		// end
 
 		// Do actions according to phases
-		if (phase_count == 1'b1) begin // Phase 0
+		if (clk_pixel_s[1] == 1'b1) begin // Phase 0
 			// Output the lower (1st) part
 			data_out <= data_s[1][11:0];
 			// Output vsync and hsync as well
@@ -122,7 +122,7 @@ always @(posedge clk_out) begin
 			hsync_out <= hsync_s[1];
 			// Generate data enable
 			if (px_count == PX_TO_DE && v_active) set_de <= ~set_de;
-			if (px_count == (PX_TO_DE + PX_ACT_DE)) reset_de <= 1'b1;
+			if (px_count == (PX_TO_DE + PX_ACT_DE)) reset_de <= ~reset_de;
 		end else begin
 			// Output the high (2nd) part
 			data_out <= data_s[1][23:12];
@@ -148,19 +148,21 @@ always @(posedge clk_out) begin
 end
 
 // 180 degrees later switch the data enable
-reg [1:0] r_neg_set_de = 2'b00;
+reg [2:0] r_neg_set_de = 2'b00;
+reg [2:0] r_neg_reset_de = 2'b00;
 always @(negedge clk_out) begin
 
-	if (clk_pixel_out == 1'b0) begin
-		r_neg_set_de <= {r_neg_set_de[0], set_de};
+	if (clk_pixel_out == 1'b1) begin
+		r_neg_set_de <= {r_neg_set_de[1], r_neg_set_de[0], set_de};
+		r_neg_reset_de <= {r_neg_reset_de[1], r_neg_reset_de[0], reset_de};
 
-		if (r_neg_set_de[1] != r_neg_set_de[0]) begin
+		if (r_neg_set_de[0] != r_neg_set_de[1]) begin
 			de_out <= 1'b1;	
 		end
-	end
 
-	if (reset_de) begin
-		de_out <= 1'b0;
+		if (r_neg_reset_de[0] != r_neg_reset_de[1]) begin
+			de_out <= 1'b0;
+		end
 	end
 end
 

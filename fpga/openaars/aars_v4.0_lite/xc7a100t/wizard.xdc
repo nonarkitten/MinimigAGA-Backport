@@ -29,3 +29,11 @@ resize_pblock [get_pblocks pblock_sdram] -add {RAMB36_X1Y15:RAMB36_X3Y18}
 
 
 set_false_path -from [get_pins myReset/nresetLoc_reg/C] -to [get_pins {r_reset_sync_reg[0]/D}]
+
+
+create_clock -period 13.477 -name clk_hdmi -waveform {0.000 6.739}
+set_output_delay -clock [get_clocks -of_objects [get_pins clk_hdmi/CLKOUT0]] -min -0.700 [get_ports {{dv_d[*]} dv_de dv_hsync dv_vsync}]
+set_output_delay -clock [get_clocks -of_objects [get_pins clk_hdmi/CLKOUT0]] -max 1.000 [get_ports {{dv_d[*]} dv_de dv_hsync dv_vsync}]
+
+set_output_delay -clock [get_clocks clk_hdmi] -min -0.700 [get_ports dv_clk]
+set_output_delay -clock [get_clocks clk_hdmi] -max 1.000 [get_ports dv_clk]
