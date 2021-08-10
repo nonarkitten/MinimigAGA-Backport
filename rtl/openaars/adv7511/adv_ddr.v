@@ -28,7 +28,7 @@ module adv_ddr
 // 	{ XVIDC_VM_1280x720_50_P, "1280x720@50Hz", XVIDC_FR_50HZ,
 //		{1280, 440, 40, 220, 1980, 1,
 //		720, 5, 5, 20, 750, 0, 0, 0, 0, 1} },
-parameter PX_TO_DE = 36;
+parameter PX_TO_DE = 10;
 parameter PX_ACT_DE = 1280;
 parameter PX_TOTAL = 1360;
 

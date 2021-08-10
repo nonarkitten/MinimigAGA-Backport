@@ -24,7 +24,7 @@
 // PAL  752*625*50Hz = 23500000 Hz
 
 module pal_to_hd_upsample #(
-    parameter PAL_OFFSET_HZ = 'h0,
+    parameter PAL_OFFSET_HZ = 'h90,
     parameter PAL_OFFSET_VT = 0,
     parameter PAL_HD_H_RES  = 1980,
     parameter PAL_HD_H_FP   = 5,
