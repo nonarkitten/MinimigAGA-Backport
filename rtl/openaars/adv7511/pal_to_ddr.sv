@@ -247,7 +247,7 @@ module pal_to_ddr(
 
     // Upscale the video signal using a line buffer
     pal_to_hd_upsample #(
-        .PAL_HD_H_RES(1650) // Total pixels in a line
+        .PAL_HD_H_RES(1980) // Total pixels in a line
     ) my60hzupsample (
         .clk_out(clk),
         .clk_in(clk_114),
@@ -319,7 +319,15 @@ module pal_to_ddr(
     assign w_o_b     = r_50hz ? w_50_o_b : w_60_o_b;
 
     // ADV DDR output
-    adv_ddr myadr_ddr (
+    adv_ddr #(
+        .PX_TO_DE(280),
+        .PX_ACT_DE(1280),
+        .PX_TOTAL(1980),
+
+        .PY_TO_DE(5),
+        .ACT_720P(720),
+        .V_LINES_TOTAL(750)
+    ) myadr_ddr (
         // INPUT
         .clk_out(clk),            // DDR clock at 4xpixel clock
         .clk_in(w_adv_clk),        // Pixel clock

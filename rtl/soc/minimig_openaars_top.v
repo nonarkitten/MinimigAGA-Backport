@@ -254,10 +254,10 @@ assign uart3_txd = amiga_tx;
 ////////////////////////////////////////
 MMCME2_ADV #(
   .BANDWIDTH("OPTIMIZED"),
-  .CLKFBOUT_MULT_F(20.0),       // 1000  MHz 
+  .CLKFBOUT_MULT_F(23.0),       // 1000  MHz 
   .CLKFBOUT_PHASE(0.000),   // No offset
   .CLKIN1_PERIOD(20),       // 50      MHz (20 ns)
-  .CLKOUT0_DIVIDE_F(6.75),       // 148    MHz /4 divide
+  .CLKOUT0_DIVIDE_F(7.75),       // 148    MHz /4 divide
   .DIVCLK_DIVIDE(1),
   .REF_JITTER1(0.010)
 ) clk_hdmi (

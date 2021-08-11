@@ -28,7 +28,7 @@ module adv_ddr
 // 	{ XVIDC_VM_1280x720_50_P, "1280x720@50Hz", XVIDC_FR_50HZ,
 //		{1280, 440, 40, 220, 1980, 1,
 //		720, 5, 5, 20, 750, 0, 0, 0, 0, 1} },
-parameter PX_TO_DE = 10;
+parameter PX_TO_DE = 260;
 parameter PX_ACT_DE = 1280;
 parameter PX_TOTAL = 1360;
 
@@ -121,8 +121,8 @@ always @(posedge clk_out) begin
 			vsync_out <= vsync_s[1];
 			hsync_out <= hsync_s[1];
 			// Generate data enable
-			if (px_count == PX_TO_DE && v_active) set_de <= ~set_de;
-			if (px_count == (PX_TO_DE + PX_ACT_DE)) reset_de <= ~reset_de;
+			if ((px_count == PX_TO_DE) && v_active) set_de <= ~set_de;
+			if (px_count == (PX_ACT_DE + PX_TO_DE)) reset_de <= ~reset_de;
 		end else begin
 			// Output the high (2nd) part
 			data_out <= data_s[1][23:12];
@@ -135,16 +135,6 @@ always @(posedge clk_out) begin
 		// Output synchronized pixel clock 
 		clk_pixel_out <= clk_pixel_s[1];
 	end
-
-	// Negative edge set
-	// if (hsync_s[2] && !hsync_s[1] && v_active) begin
-	// 	set_de <= 1'b1;
-	// end
-
-	// Positive edge reset
-	// if (!hsync_s[2] && hsync_s[1]) begin
-	// 	reset_de <= 1'b1;
-	// end
 end
 
 // 180 degrees later switch the data enable

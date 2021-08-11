@@ -26,18 +26,12 @@
 
 module signal_generator
 #(
-    // parameter PAL_HZ_ACT_PIX = 1280,
-    // parameter PAL_HZ_FRONT_PORCH = 8,
-    // parameter PAL_HZ_SYNC_WIDTH = 32,
-    // parameter PAL_HZ_BACK_PORCH = 38,
-    // parameter PAL_VT_ACT_LN = 720,
-    // parameter PAL_VT_FRONT_PORCH = 3,
-    // parameter PAL_VT_SYNC_WIDTH = 7,
-    // parameter PAL_VT_BACK_PORCH = 9
+    // Horizontal parameters
     parameter PAL_HZ_ACT_PIX = 1280,
     parameter PAL_HZ_FRONT_PORCH = 440,
     parameter PAL_HZ_SYNC_WIDTH = 40,
     parameter PAL_HZ_BACK_PORCH = 220,
+    // Vertical parameters
     parameter PAL_VT_ACT_LN = 720,
     parameter PAL_VT_FRONT_PORCH = 3,
     parameter PAL_VT_SYNC_WIDTH = 5,
