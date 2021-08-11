@@ -100,6 +100,7 @@ reg clk_pixel_prev = 0;
 reg [$clog2(PX_TOTAL):0] px_count = 0;
 always @(posedge clk_out) begin
 	reset_de <= 1'b0;
+	data_out <= 0;
 	if (reset) begin
 		clk_pixel_prev <= 0;
 		// phase_count <= 0;
@@ -116,7 +117,9 @@ always @(posedge clk_out) begin
 		// Do actions according to phases
 		if (clk_pixel_s[1] == 1'b1) begin // Phase 0
 			// Output the lower (1st) part
-			data_out <= data_s[1][11:0];
+			if (de_out) begin
+				data_out <= data_s[1][11:0];
+			end
 			// Output vsync and hsync as well
 			vsync_out <= vsync_s[1];
 			hsync_out <= hsync_s[1];
@@ -125,7 +128,9 @@ always @(posedge clk_out) begin
 			if (px_count == (PX_ACT_DE + PX_TO_DE)) reset_de <= ~reset_de;
 		end else begin
 			// Output the high (2nd) part
+			if (de_out) begin
 			data_out <= data_s[1][23:12];
+			end
 			// Handle pixel counter to Data enable
 			px_count <= px_count + 1;
 			// Reset horizontal counter
