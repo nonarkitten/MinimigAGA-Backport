@@ -5,8 +5,16 @@
 // When register 0x16 = 0 first byte in middle of positive
 // https://www.analog.com/media/en/technical-documentation/user-guides/ADV7511_Hardware_Users_Guide.pdf
 // Page 35
-module adv_ddr 
-(
+module adv_ddr #(
+	// X axis
+	parameter PX_TO_DE = 100,
+	parameter PX_ACT_DE = 1280,
+	parameter PX_TOTAL = 1980,
+	// Y axis
+	parameter PY_TO_DE = 5,
+	parameter ACT_720P = 720,
+	parameter V_LINES_TOTAL = 806
+)(
 	// INPUT
 	input clk_out,			// DDR clock at 4xpixel clock
 	input clk_in,        // Pixel clock
@@ -28,13 +36,6 @@ module adv_ddr
 // 	{ XVIDC_VM_1280x720_50_P, "1280x720@50Hz", XVIDC_FR_50HZ,
 //		{1280, 440, 40, 220, 1980, 1,
 //		720, 5, 5, 20, 750, 0, 0, 0, 0, 1} },
-parameter PX_TO_DE = 260;
-parameter PX_ACT_DE = 1280;
-parameter PX_TOTAL = 1360;
-
-parameter PY_TO_DE = 5;
-parameter ACT_720P = 720;
-parameter V_LINES_TOTAL = 806;
 
 // reg clk_pixel_, clk_pixel__;
 reg [2:0] clk_pixel_s;

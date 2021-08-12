@@ -19,16 +19,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
-module frame_freq (
+module frame_freq #(
+	parameter CLK_FREQ_IN = 148  // Clock in frequency in MHz
+) (
 	input reset,
 	input clk,
 	input i_vsync,
 	output [$clog2(100):0] o_freq,  // 7 bits frequency, 2 bits fraction
 	output o_valid
 );
-
-// Clock in frequency in MHz
-parameter CLK_FREQ_IN = 200;   // Used for the frame rate detection
 
 // vsync registers
 reg [1:0] vsync_buf = 0;
