@@ -101,7 +101,7 @@ architecture behave of work.i2c_sender is
    record
      addr, reg, val: std_logic_vector(7 downto 0);
    end record;
-   type T_init_sequence is array(0 to 40) of T_writereg;
+   type T_init_sequence is array(0 to 48) of T_writereg;
    constant C_init_sequence: T_init_sequence :=
    (
      ---------------------
@@ -124,7 +124,7 @@ architecture behave of work.i2c_sender is
      (addr => x"72", reg => x"d0", val => x"3e"), -- ADI required Write
      -- Setup video input mode
      (addr => x"72", reg => x"48", val => x"20"), -- DDR alignment [35:24]
-     (addr => x"72", reg => x"15", val => x"05"), -- Input 444 (RGB or YCrCb) with Separate Syncs DDR
+     (addr => x"72", reg => x"15", val => x"25"), -- Input 444 (RGB or YCrCb) with Separate Syncs DDR, 48kHz audio
      (addr => x"72", reg => x"16", val => x"38"), -- 8 bit, style 1, falling edge
      (addr => x"72", reg => x"17", val => x"02"), -- 12 bit, style 1, falling edge
      (addr => x"72", reg => x"18", val => x"00"), -- CSC disabled
@@ -132,11 +132,11 @@ architecture behave of work.i2c_sender is
      (addr => x"72", reg => x"56", val => x"28"), -- 16:9, active same as aspect ratio
      -- (addr => x"ff", reg => x"48", val => x"28"), -- 11 0 default
      -- Set output mode
-     (addr => x"72", reg => x"af", val => x"04"), -- Must be 04
+     (addr => x"72", reg => x"af", val => x"06"), -- 04 for DVI, 06 for HDMI
      (addr => x"72", reg => x"40", val => x"80"), -- GC Package Enable
      (addr => x"72", reg => x"4c", val => x"04"), -- 0 default
      -- Tell the display the resolution
-     (addr => x"72", reg => x"3c", val => x"04"), -- Nbr of times to search for good phase
+     (addr => x"72", reg => x"3c", val => x"04"), -- VIC to 720p @ 60Hz
      (addr => x"72", reg => x"d1", val => x"ff"), -- Nbr of times to search for good phase
      (addr => x"72", reg => x"de", val => x"9c"), -- ADI required write
      (addr => x"72", reg => x"e4", val => x"9c"), -- ADI required write
@@ -145,6 +145,17 @@ architecture behave of work.i2c_sender is
      (addr => x"72", reg => x"fa", val => x"00"), -- Nbr of times to search for good phase
      -- Set the video clock delay
      (addr => x"72", reg => x"ba", val => x"60"), -- Configure no clock delay
+     -- Audio I2S
+     (addr => x"72", reg => x"01", val => x"00"), -- N = 6144
+     (addr => x"72", reg => x"02", val => x"18"), -- N and CTS for 48kHz @ 74.25 MHz pixel clock
+     (addr => x"72", reg => x"03", val => x"00"), -- CTS is calculated 
+     -- (addr => x"72", reg => x"06", val => x"0a"), -- [7]=1 CTS to automatic
+     (addr => x"72", reg => x"0a", val => x"00"), -- 
+     (addr => x"72", reg => x"0c", val => x"3c"), -- s0-s3 channel I2S
+     (addr => x"72", reg => x"14", val => x"02"), -- 16bit samples
+     (addr => x"72", reg => x"44", val => x"3a"), -- audio packet enable, AVI infroframe, audio info frame
+     (addr => x"72", reg => x"73", val => x"01"), -- 
+
      ---------------------
      -- MAX9850+ Audio out
      ---------------------
@@ -154,8 +165,6 @@ architecture behave of work.i2c_sender is
      (addr => x"20", reg => x"05", val => x"FD"), -- Power on, Mclk enable, charge pump enable, headphone out enable, DAC enable
      (addr => x"20", reg => x"06", val => x"00"), -- Transparent internal clock devider
      (addr => x"20", reg => x"07", val => x"40"), -- Use internal oscillator for charge pump
-     --(addr => x"20", reg => x"08", val => x"45"), -- Non interger mode 45C5 +- 48Khz 
-     --(addr => x"20", reg => x"09", val => x"c5"), -- 
      (addr => x"20", reg => x"08", val => x"00"), -- Non intereger mode 45C5 +- 48Khz 
      (addr => x"20", reg => x"09", val => x"00"), -- 
      (addr => x"20", reg => x"0a", val => x"08"), -- Slave mode, 16 bits

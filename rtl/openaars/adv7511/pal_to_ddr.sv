@@ -150,7 +150,7 @@ module pal_to_ddr(
         r_50hz <= 1'b0;
         r_60hz <= 1'b0;
         if (fps_valid == 1'b1) begin
-            if (cur_fps < 58) begin
+            if (cur_fps < 53) begin
                 r_50hz <= 1'b1;
             end else begin
                 r_60hz <= 1'b1;
