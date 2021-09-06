@@ -51,10 +51,6 @@ module pal_to_ddr(
     wire w_hd_hsync;
     wire w_hd_vsync;
 
-    // Current video postion
-    wire [11:0] w_x;
-    wire [11:0] w_y;
-
     // enable to indicate the next data point is needed
     wire w_adv_de;
     wire w_adv_clk;
@@ -81,52 +77,44 @@ module pal_to_ddr(
     reg  [7:0] s_pal_b [0:1];
     wire [7:0] w_pal_b;
 
-    // reg [7:0] r_hoffset [0:1];
-    // reg [7:0] r_voffset [0:1];
-
     // Synchronize the signal
-    // always @(posedge clk_in) begin
-    //     // Hsync/Vsync
-    //     s_pal_hsync <= {s_pal_hsync[1], s_pal_hsync[0], i_pal_hsync};
-    //     s_pal_vsync <= {s_pal_vsync[1], s_pal_vsync[0], i_pal_vsync};
-    //     // Red/Green/Blue
-    //     s_pal_r       <= { s_pal_r[0], i_pal_r };
-    //     s_pal_g       <= { s_pal_g[0], i_pal_g };
-    //     s_pal_b       <= { s_pal_b[0], i_pal_b };
-    //     // Offset registers
-    //     r_hoffset     <= {r_hoffset[1], i_hoffset};
-    //     r_voffset     <= {r_voffset[1], i_voffset};
-    // end
+    always @(posedge clk_114) begin
+        // Hsync/Vsync
+        s_pal_hsync <= {s_pal_hsync[1], s_pal_hsync[0], i_pal_hsync};
+        s_pal_vsync <= {s_pal_vsync[1], s_pal_vsync[0], i_pal_vsync};
+        // Red/Green/Blue
+        s_pal_r       <= { s_pal_r[0], i_pal_r };
+        s_pal_g       <= { s_pal_g[0], i_pal_g };
+        s_pal_b       <= { s_pal_b[0], i_pal_b };
+    end
 
     // assign w_pal_r = s_pal_r[1];
     // assign w_pal_g = s_pal_g[1];
     // assign w_pal_b = s_pal_b[1];
-    // assign w_pal_hsync = s_pal_hsync[1];
-    // assign w_pal_vsync = s_pal_vsync[1];
+    assign w_pal_hsync = s_pal_hsync[1];
+    assign w_pal_vsync = s_pal_vsync[1];
 
     assign w_pal_r = i_pal_r;
     assign w_pal_g = i_pal_g;
     assign w_pal_b = i_pal_b;
-    assign w_pal_hsync = i_pal_hsync;
-    assign w_pal_vsync = i_pal_vsync;
+    // assign w_pal_hsync = i_pal_hsync;
+    // assign w_pal_vsync = i_pal_vsync;
 
     // Detect number of horizontal lines in video in
-    localparam SEL_INT_CLK = 1'b0;
-    localparam SEL_SRC_CLK = 1'b1;
     reg [$clog2(1000):0] hz_in_count = 0;
-    reg                  r_passthrough = SEL_INT_CLK;
+    reg                  r_passthrough = 1'b0;
 
     always @(posedge clk) begin
         if (s_pal_hsync[2] == 1'b0 && s_pal_hsync[1] == 1'b1) begin
           hz_in_count <= hz_in_count + 1; 
         end
 
-        if (s_pal_vsync[2] == 1'b1 && s_pal_hsync[1] == 1'b0) begin
-            r_passthrough <= SEL_INT_CLK;
+        if (s_pal_vsync[2] == 1'b1 && s_pal_vsync[1] == 1'b0) begin
+            r_passthrough <= 1'b0;
             // When there are more than 400 lines in the video signal,
             // Assume it's VGA and pass it through 
-            if (hz_in_count > 400) begin
-                r_passthrough <= SEL_SRC_CLK;
+            if (hz_in_count > 700) begin
+                r_passthrough <= 1'b1;
             end
             hz_in_count <= 0;
         end
@@ -209,7 +197,6 @@ module pal_to_ddr(
         .i_hd_hsync(w_50_hd_hsync),
         .i_hd_vsync(w_50_hd_vsync),
         .i_hd_clk(w_50_adv_clk),
-        .i_hd_four_three(1'b0),
         // horizontal and vertical offsets
         .i_hd_hoffset(i_voffset),
         .i_hd_voffset(i_voffset)
@@ -228,7 +215,6 @@ module pal_to_ddr(
     ) hd_50hz_gen(
         .clk(clk),
         .reset(reset),
-        //.i_vblank_width(w_vblank_width),
         .i_frame_end(w_50_frame_end),
         .i_r(w_50_r),
         .i_g(w_50_g),
@@ -263,13 +249,11 @@ module pal_to_ddr(
         .o_hd_g(w_60_g),
         .o_hd_b(w_60_b),
         .o_hd_vsync(w_60_vsync),
-        //.o_vblank_width(w_vblank_width),
         .o_frame_end(w_60_frame_end),
         // HD sync pulse
         .i_hd_hsync(o_hsync),
         .i_hd_vsync(w_60_hd_vsync),
         .i_hd_clk(w_50_adv_clk),
-        .i_hd_four_three(1'b0),
         // horizontal and vertical offsets
         .i_hd_hoffset(i_hoffset),
         .i_hd_voffset(i_voffset[0])
@@ -288,7 +272,6 @@ module pal_to_ddr(
     ) hd_60hz_gen(
         .clk(clk),
         .reset(reset),
-        //.i_vblank_width(w_vblank_width),
         .i_frame_end(w_60_frame_end),
         .i_r(w_60_r),
         .i_g(w_60_g),
@@ -305,18 +288,22 @@ module pal_to_ddr(
         .o_adv_de(w_60_adv_de)
     );
 
-    // Use conditional operators for now
-    assign w_hd_vsync = r_50hz ? w_50_hd_vsync : w_60_hd_vsync;
-    assign w_hd_hsync = r_50hz ? w_50_hd_hsync : w_60_hd_hsync;
-    // assign w_x        = r_50hz ? w_50_x : w_60_x;
-    // assign w_y        = r_50hz ? w_50_y : w_60_y;
-    assign w_adv_clk  = r_50hz ? w_50_adv_clk : w_60_adv_clk;
-    // assign w_hsync    = r_50hz ? w_50_hsync : w_60_hsync;
-    assign w_vsync    = r_50hz ? w_50_vsync : w_60_vsync;
-    assign w_adv_de   = r_50hz ? w_50_adv_de : w_60_adv_de;
-    assign w_o_r     = r_50hz ? w_50_o_r : w_60_o_r;
-    assign w_o_g     = r_50hz ? w_50_o_g : w_60_o_g;
-    assign w_o_b     = r_50hz ? w_50_o_b : w_60_o_b;
+
+    // Switch between 50 and 60 Hz video conversion
+    assign w_adv_clk  = 
+         (r_50hz ? w_50_adv_clk : w_60_adv_clk);
+    assign w_hd_vsync =
+        (r_50hz ? w_50_hd_vsync : w_60_hd_vsync);
+    assign w_hd_hsync = 
+        (r_50hz ? w_50_hd_hsync : w_60_hd_hsync);
+    assign w_vsync   =
+        (r_50hz ? w_50_vsync : w_60_vsync);
+    assign w_o_r     =
+        (r_50hz ? w_50_o_r : w_60_o_r);
+    assign w_o_g     =
+        (r_50hz ? w_50_o_g : w_60_o_g);
+    assign w_o_b     =
+        (r_50hz ? w_50_o_b : w_60_o_b);
 
     // ADV DDR output
     adv_ddr #(
@@ -334,7 +321,7 @@ module pal_to_ddr(
 
         .reset(reset),
 
-        .de_in(w_adv_de),       // Used to generate DE
+        // .de_in(w_adv_de),       // Used to generate DE
         .hsync(w_hd_hsync),
         .vsync(w_vsync),
         .data({w_o_r, w_o_g, w_o_b}), // Pixel data in 24-bpp

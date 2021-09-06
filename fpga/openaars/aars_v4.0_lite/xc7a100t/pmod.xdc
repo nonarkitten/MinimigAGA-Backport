@@ -23,3 +23,4 @@ set_property -dict {PACKAGE_PIN U2 IOSTANDARD LVTTL} [get_ports pmod_10]
 # U260	U2	34		Left	PMOD_10
 
 
+

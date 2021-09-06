@@ -126,16 +126,15 @@ architecture behave of work.i2c_sender is
      (addr => x"72", reg => x"48", val => x"20"), -- DDR alignment [35:24]
      (addr => x"72", reg => x"15", val => x"25"), -- Input 444 (RGB or YCrCb) with Separate Syncs DDR, 48kHz audio
      (addr => x"72", reg => x"16", val => x"38"), -- 8 bit, style 1, falling edge
-     (addr => x"72", reg => x"17", val => x"02"), -- 12 bit, style 1, falling edge
+     (addr => x"72", reg => x"17", val => x"02"), -- 12 bit, style 1, falling edge, 16:9
      (addr => x"72", reg => x"18", val => x"00"), -- CSC disabled
      (addr => x"72", reg => x"55", val => x"00"), -- 0 default
-     (addr => x"72", reg => x"56", val => x"28"), -- 16:9, active same as aspect ratio
+     (addr => x"72", reg => x"56", val => x"18"), -- 16:9, active same as aspect ratio
      -- (addr => x"ff", reg => x"48", val => x"28"), -- 11 0 default
      -- Set output mode
      (addr => x"72", reg => x"af", val => x"06"), -- 04 for DVI, 06 for HDMI
-     (addr => x"72", reg => x"40", val => x"c0"), -- GC, SPD Package Enable
+     (addr => x"72", reg => x"40", val => x"c0"), -- GC and SPD Package Enable
      (addr => x"72", reg => x"4a", val => x"80"), -- Auto Checksum Enable
-     (addr => x"72", reg => x"4c", val => x"04"), -- 0 default
      -- Tell the display the resolution
      (addr => x"72", reg => x"3c", val => x"04"), -- VIC to 720p @ 60Hz
      (addr => x"72", reg => x"d1", val => x"ff"), -- Nbr of times to search for good phase
@@ -145,7 +144,7 @@ architecture behave of work.i2c_sender is
      (addr => x"72", reg => x"96", val => x"40"), -- Clear HPD interrupt flag
      (addr => x"72", reg => x"fa", val => x"00"), -- Nbr of times to search for good phase
                                                   -- Set the video clock delay
-     (addr => x"72", reg => x"ba", val => x"60"), -- Configure no clock delay
+     (addr => x"72", reg => x"ba", val => x"00"), -- Configure clock delay -1.2ns
                                                   -- Audio I2S
      (addr => x"72", reg => x"01", val => x"00"), -- N = 6144
      (addr => x"72", reg => x"02", val => x"18"), -- N and CTS for 48kHz @ 74.25 MHz pixel clock
@@ -163,29 +162,27 @@ architecture behave of work.i2c_sender is
      -------------------------
      -- Gives name to device
      -- Without a title the device is not detected
-     (addr => x"70", reg => x"1f", val => x"00"), -- Disable update
+     (addr => x"70", reg => x"1f", val => x"80"), -- Allow config of new packet, while sending previous data
      (addr => x"70", reg => x"00", val => x"83"), -- Packet type 3
      (addr => x"70", reg => x"01", val => x"01"), -- Version 1 
      (addr => x"70", reg => x"02", val => x"19"), -- Length 19
      (addr => x"70", reg => x"03", val => x"4f"), -- O
-     (addr => x"70", reg => x"04", val => x"50"), -- P
-     (addr => x"70", reg => x"05", val => x"45"), -- E
-     (addr => x"70", reg => x"04", val => x"4e"), -- N
+     (addr => x"70", reg => x"04", val => x"50"), -- p 
+     (addr => x"70", reg => x"05", val => x"45"), -- e 
+     (addr => x"70", reg => x"04", val => x"4e"), -- n 
      (addr => x"70", reg => x"07", val => x"41"), -- A
      (addr => x"70", reg => x"08", val => x"41"), -- A
      (addr => x"70", reg => x"09", val => x"52"), -- R
      (addr => x"70", reg => x"0a", val => x"53"), -- S
-     (addr => x"70", reg => x"0b", val => x"00"), -- \0 
-     (addr => x"70", reg => x"0c", val => x"00"), -- \0
-     (addr => x"70", reg => x"0d", val => x"64"), -- d
-     (addr => x"70", reg => x"0e", val => x"65"), -- e
-     (addr => x"70", reg => x"0f", val => x"46"), -- F
-     (addr => x"70", reg => x"10", val => x"45"), -- E
-     (addr => x"70", reg => x"11", val => x"45"), -- E
-     (addr => x"70", reg => x"12", val => x"53"), -- S
-     (addr => x"70", reg => x"13", val => x"54"), -- T
-     (addr => x"70", reg => x"14", val => x"00"), -- \0
-     (addr => x"70", reg => x"1f", val => x"80"), -- enable update
+     (addr => x"70", reg => x"0b", val => x"64"), -- d
+     (addr => x"70", reg => x"0c", val => x"65"), -- e
+     (addr => x"70", reg => x"0d", val => x"46"), -- F
+     (addr => x"70", reg => x"0e", val => x"45"), -- E
+     (addr => x"70", reg => x"0f", val => x"45"), -- E
+     (addr => x"70", reg => x"10", val => x"53"), -- S
+     (addr => x"70", reg => x"11", val => x"54"), -- T
+     (addr => x"70", reg => x"12", val => x"00"), -- \0
+     (addr => x"70", reg => x"1f", val => x"00"), -- send new information, latch current data to buffer
 
      ---------------------
      -- MAX9850+ Audio out

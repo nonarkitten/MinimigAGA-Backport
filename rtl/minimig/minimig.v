@@ -362,7 +362,7 @@ wire  index;          //disk index interrupt
 wire  blank;          //blanking signal
 wire  sol;            //start of video line
 wire  sof;            //start of video frame
-wire   vbl_int;         // vertical blanking interrupt
+wire  vbl_int;         // vertical blanking interrupt
 wire  strhor_denise;      //horizontal strobe for Denise
 wire  strhor_paula;     //horizontal strobe for Paula
 wire  [7:0]red_i;       //denise red (internal)

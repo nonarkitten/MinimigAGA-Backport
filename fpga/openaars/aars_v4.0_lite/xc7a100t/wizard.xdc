@@ -35,5 +35,3 @@ create_clock -period 13.477 -name clk_hdmi -waveform {0.000 6.739}
 set_output_delay -clock [get_clocks -of_objects [get_pins clk_hdmi/CLKOUT0]] -min -0.700 [get_ports {{dv_d[*]} dv_de dv_hsync dv_vsync}]
 set_output_delay -clock [get_clocks -of_objects [get_pins clk_hdmi/CLKOUT0]] -max 1.000 [get_ports {{dv_d[*]} dv_de dv_hsync dv_vsync}]
 
-set_output_delay -clock [get_clocks clk_hdmi] -min -0.700 [get_ports dv_clk]
-set_output_delay -clock [get_clocks clk_hdmi] -max 1.000 [get_ports dv_clk]

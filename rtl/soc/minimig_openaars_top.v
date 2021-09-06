@@ -358,6 +358,8 @@ pal_to_ddr my_pal_to_ddr (
   .clk(clk_148),
   .clk_114(clk_114),
   .reset(~reset_n),
+  // VGA input
+  .vga_clk_pixel(vga_pixel),
   // Input PAL
   .i_pal_vsync(!vga_vs),
   .i_pal_hsync(!vga_hs),
@@ -367,7 +369,6 @@ pal_to_ddr my_pal_to_ddr (
   // Video offset
   .i_hoffset(hoffset),
   .i_voffset(voffset),
-  //.i_pal_pixel(vga_pixel),
   //.i_pal_cs(vga_cs),
   // Output HDMI
   .o_clk_pixel(dv_clk),

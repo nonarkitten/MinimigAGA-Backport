@@ -97,3 +97,4 @@ set_false_path -to [get_clocks openaars_virtual_top/mycfide/sck_reg_n_0]
 
 
 
+

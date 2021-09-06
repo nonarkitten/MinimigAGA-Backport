@@ -16,19 +16,19 @@ module adv_ddr #(
 	parameter V_LINES_TOTAL = 806
 )(
 	// INPUT
-	input clk_out,			// DDR clock at 4xpixel clock
-	input clk_in,        // Pixel clock
+	input clk_out,						// DDR clock at 4xpixel clock
+	input clk_in,						// Pixel clock
 	input reset,
 	
-	input de_in,		// Used to generate DE
-	input vsync, hsync,     // 
-	input [23:0 ] data,     // Pixel data in 24-bpp
+	// input de_in,						// Used to generate DE
+	input vsync, hsync,					// 
+	input [23:0 ] data,					// Pixel data in 24-bpp
 
 	// OUTPUT
-	output reg clk_pixel_out,   // Output pixel clock after synchronization to clk_out
+	output reg clk_pixel_out,			// Output pixel clock after synchronization to clk_out
 	output reg de_out = 1'b0,			// Data enable signal
 	output reg vsync_out, hsync_out,
-	output reg [11:0] data_out  // DDR data stream out
+	output reg [11:0] data_out			// DDR data stream out
 );
 
 // The amount of pixels before the Data enabled is triggered
@@ -40,7 +40,7 @@ module adv_ddr #(
 // reg clk_pixel_, clk_pixel__;
 reg [2:0] clk_pixel_s;
 // reg de_in_, de_in__;
-reg [1:0] de_in_s;
+// reg [1:0] de_in_s;
 
 // reg vsync_, vsync__;
 reg [2:0] vsync_s;
@@ -58,7 +58,7 @@ reg reset_de = 1'b0;
 // Synchronize signal to clk_out
 always @(posedge clk_out) begin
 	clk_pixel_s <= {clk_pixel_s[1], clk_pixel_s[0], clk_in};
-	de_in_s <= {de_in_s[0], de_in};
+	// de_in_s <= {de_in_s[0], de_in};
 	vsync_s <= {vsync_s[1], vsync_s[0], vsync};
 	hsync_s <= {hsync_s[1], hsync_s[0], hsync};
 	// Sync 2d array
@@ -142,6 +142,7 @@ always @(posedge clk_out) begin
 		clk_pixel_out <= clk_pixel_s[1];
 	end
 end
+
 
 // 180 degrees later switch the data enable
 reg [2:0] r_neg_set_de = 2'b00;

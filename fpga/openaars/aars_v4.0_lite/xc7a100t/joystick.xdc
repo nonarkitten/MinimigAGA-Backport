@@ -25,3 +25,4 @@ set_property -dict {PACKAGE_PIN A2 IOSTANDARD LVTTL} [get_ports js_inta]
 # Constrain timing on the Joystick port
 
 
+
