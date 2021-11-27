@@ -1,4 +1,5 @@
 # Minimig AGA
+
 For Turbo Chameleon TC64, MiST and other platforms.
 (This core should be easily portable to any FPGA board with VGA out, PS/2 in, SD-card, about 25,000 logic elements, and a 16-bit wide SDRAM supporting 13x9 layout for 32 megabytes of RAM.)
 
@@ -10,30 +11,29 @@ For Turbo Chameleon TC64, MiST and other platforms.
 
 This minimig variant has been upgraded with [AGA chipset](http://en.wikipedia.org/wiki/Amiga_Advanced_Graphics_Architecture) capabilites, which allows it to emulate the latest Amiga models ([Amiga 1200](http://en.wikipedia.org/wiki/Amiga_1200), [Amiga 4000](http://en.wikipedia.org/wiki/Amiga_4000) and (partially) [Amiga CD32](http://en.wikipedia.org/wiki/Amiga_CD32)). Ofcourse it also supports previous OCS/ECS Amigas like [Amiga 500](http://en.wikipedia.org/wiki/Amiga_500), [Amiga 600](http://en.wikipedia.org/wiki/Amiga_600) etc.
 
-
 ## Core features supported
 
-* chipset variants : OCS, ECS, AGA
-* chipRAM : 0.5MB - 2.0MB
-* slowRAM : 0.0MB - 1.5MB
-* fastRAM : 0.0MB - 24MB
-* CPU core : 68000, 68010, 68020
-* kickstart : 1.2 - 3.1 (256kB, 512kB & 1MB kickstart ROMs currently supported)
-* HRTmon with custom registers mirror
-* floppy disks : 1-4 floppies (supports ADF floppy image format), with normal & turbo speeds
-* hard disks : 1-2 hard disk images (supports whole disk images, partition images, using whole SD card and using SD card partition)
-* video standard : PAL / NTSC
-* supports normal & scandoubled video output (15kHz / 30kHz) - can be used with a monitor or a TV with a SCART cable
-* peripherals : real Amiga / C64 joysticks connected to C64 joystick ports, CDTV infra-red controllers, PS/2 keyboards,
-PS/2 mice, Turbo Chameleon Docking Station for extra joysticks or real Amiga mouse, and MIDI in / out
-* supports basic retargetable graphics with a P96 driver
-* has an implementation of the Akiko chunky to planar converter
-* has an extra audio channel which can be used from the Amiga to play CD-quality WAV files, or used on some platforms to emulate floppy drive sounds.
-
+- chipset variants : OCS, ECS, AGA
+- chipRAM : 0.5MB - 2.0MB
+- slowRAM : 0.0MB - 1.5MB
+- fastRAM : 0.0MB - 24MB
+- CPU core : 68000, 68010, 68020
+- kickstart : 1.2 - 3.1 (256kB, 512kB & 1MB kickstart ROMs currently supported)
+- HRTmon with custom registers mirror
+- floppy disks : 1-4 floppies (supports ADF floppy image format), with normal & turbo speeds
+- hard disks : 1-2 hard disk images (supports whole disk images, partition images, using whole SD card and using SD card partition)
+- video standard : PAL / NTSC
+- supports normal & scandoubled video output (15kHz / 30kHz) - can be used with a monitor or a TV with a SCART cable
+- peripherals : real Amiga / C64 joysticks connected to C64 joystick ports, CDTV infra-red controllers, PS/2 keyboards,
+  PS/2 mice, Turbo Chameleon Docking Station for extra joysticks or real Amiga mouse, and MIDI in / out
+- supports basic retargetable graphics with a P96 driver
+- has an implementation of the Akiko chunky to planar converter
+- has an extra audio channel which can be used from the Amiga to play CD-quality WAV files, or used on some platforms to emulate floppy drive sounds.
 
 ## Usage
 
 ### Hardware
+
 To use this minimig core, you will at the minimum need an SD/SDHC card, formatted with the FAT32 filesystem, a PS/2 keyboard and a compatible monitor / TV. Joysticks & mouse can be emulated on the keyboard. You will probably want to attach a set of speakers of headphones, a real Amiga or USB mouse and a real Amiga joystick.
 
 ### Software
@@ -46,18 +46,34 @@ The minimig can also use HDF harddisk images, which can be created with [WinUAE]
 
 ### Recommended minimig config
 
-* for ECS games / demos : CPU = 68000, Turbo=NONE, Chipset=ECS, chipRAM=0.5MB, slowRAM=0.5MB, Kickstart 1.3
-* for AGA games / demos : CPU = 68020, Turbo=NONE, Chipset=AGA, chipRAM=2MB, slowRAM=0MB, fastRAM=24MB, Kickstart 3.1
-For Workbench usage, you can try turning TURBO=BOTH for a little speed increase.
+- for ECS games / demos : CPU = 68000, Turbo=NONE, Chipset=ECS, chipRAM=0.5MB, slowRAM=0.5MB, Kickstart 1.3
+- for AGA games / demos : CPU = 68020, Turbo=NONE, Chipset=AGA, chipRAM=2MB, slowRAM=0MB, fastRAM=24MB, Kickstart 3.1
+  For Workbench usage, you can try turning TURBO=BOTH for a little speed increase.
 
 ### Controlling minimig
 
 Keyboard special keys:
 
-* F12         - OSD menu
-* F11         - start monitor (HRTmon) if HRTmon is enabled in OSD menu (otherwise F11 is the Amiga HELP key)
-* ScrollLock  - toggle keyoard only / mouse / joystick 1 / joystick 2 emulation on the keyboard (direction keys + LCTRL)
+- F12 - OSD menu
+- F11 - start monitor (HRTmon) if HRTmon is enabled in OSD menu (otherwise F11 is the Amiga HELP key)
+- ScrollLock - toggle keyoard only / mouse / joystick 1 / joystick 2 emulation on the keyboard (direction keys + LCTRL)
 
+### RTG settings
+
+Because OpenAARS uses HDMI out and not VGA, the settings that will result in a flicker free image are limited.
+Make sure the Picasso96 tools are installed, and use the tool 'Picasso96Mode' in 'Workbench->Prefs' to input the settings.
+
+Here are the settings I found to work best on my display:
+| Resolution | Depth | Width | Height | Clock | il | ds | or | Framesize | BorderSize | pos | syncsize | syncpol | freq |
+| ---------- | ------- | ----- | ------ | ----- | --- | --- | ---- | --------- | ---------- | --- | -------- | ------- | ----- |
+| 1024x768 | HiColor | 1024 | 768 | 56.72 | | | hor | 1279 | 8 | 0 | 64 | | 44kHz |
+| | | | | | | | vert | 802 | 0 | 18 | 8 | | 55Hz |
+| 800x600 | HiColor | 800 | 600 | 56.72 | | | hor | 1280 | 24 | 96 | 64 | | 44Khz |
+| | | | | | | | vert | 768 | 0 | 0 | 6 | | 57Hz |
+| 832x480 | 256Col | 832 | 480 | 28.36 | | | hor | 1012 | 0 | 55 | 64 | | 28kHz |
+| | | | | | | | vert | 560 | 0 | 38 | 8 | | 50hz |
+| 720x480 | HiColor | 720 | 480 | 28.36 | | | hor | 940 | 0 | 72 | 64 | | 30kHz |
+| | | | | | | | vert | 588 | 0 | 98 | 8 | | 51hz |
 
 ## Links & more info
 
@@ -69,20 +85,20 @@ The Turbo Chameleon 64 - [Individual Computers]http://wiki.icomp.de/wiki/Chamele
 
 MiST board support & other cores on the [MiST Project Page](https://github.com/mist-devel/mist-board/wiki)
 
-
 ## Credits
+
 This project contains code written by:
-* Jakub Bednarski
-* Sascha Boing
-* Tobias Gubener
-* Till Harbaum
-* Rok Krajnc
-* Alastair M. Robinson
-* Gyorgy Szombathelyi
-* Dennis van Weeren
+
+- Jakub Bednarski
+- Sascha Boing
+- Tobias Gubener
+- Till Harbaum
+- Rok Krajnc
+- Alastair M. Robinson
+- Gyorgy Szombathelyi
+- Dennis van Weeren
 
 All code is copyright © 2005 - 2020 and the property of its respective authors.
-
 
 ## License
 
@@ -93,24 +109,23 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ## Building minimig-mist from sources
 
-* checkout the source 
-* cd into the project directory
-* Make sure vivado settings64.sh has been sourced into the shell ``source <vivado home>/Vivado/2020.2/settings64.sh``
-* run 'rebuild.sh'
-* Open the project in Vivado, proceed with the build by pressing 'Generate bitstream'
-* wait until the status in the top right corner indicates that the build is finished
-* in 'PROGRAM AND DEBUG', unfold 'Open Hardware Manager'
-* click 'Open Target' (Make sure the FPGA is connected via the programmer at this point)
-* select 'auto connect'
+- checkout the source
+- cd into the project directory
+- Make sure vivado settings64.sh has been sourced into the shell `source <vivado home>/Vivado/2020.2/settings64.sh`
+- run 'rebuild.sh'
+- Open the project in Vivado, proceed with the build by pressing 'Generate bitstream'
+- wait until the status in the top right corner indicates that the build is finished
+- in 'PROGRAM AND DEBUG', unfold 'Open Hardware Manager'
+- click 'Open Target' (Make sure the FPGA is connected via the programmer at this point)
+- select 'auto connect'
 
 ## Building firmware
 
@@ -136,14 +151,14 @@ cp 832OSDAD.bin <root of sd card>/832OSDAD.BIN
 
 Files needed for the Open AARS to boot
 
-|name|description|
-|---|---|
-|832OSDAD.BIN|Firmware responsible for the On screen display|
-|kick.rom|Default kickstart rom|
-|hrtmon.rom*|Hardware monitor rom|
-|rom.key*|If Amiga Forever rom files are used, this key file is needed|
-|minimig.art*|Spining ball logo at boot time|
-|hardfile.hdf|Harddisk image, can be created using UAE|
+| name          | description                                                  |
+| ------------- | ------------------------------------------------------------ |
+| 832OSDAD.BIN  | Firmware responsible for the On screen display               |
+| kick.rom      | Default kickstart rom                                        |
+| hrtmon.rom\*  | Hardware monitor rom                                         |
+| rom.key\*     | If Amiga Forever rom files are used, this key file is needed |
+| minimig.art\* | Spining ball logo at boot time                               |
+| hardfile.hdf  | Harddisk image, can be created using UAE                     |
 
 ## Sources
 
@@ -158,4 +173,3 @@ ARM firmware updates and minimig-tc64 port changes by Christian Vogelsang ([mini
 MiST board & firmware by Till Harbaum ([MiST](https://code.google.com/p/mist-board/)).
 
 TG68K.C core by Tobias Gubener.
-
