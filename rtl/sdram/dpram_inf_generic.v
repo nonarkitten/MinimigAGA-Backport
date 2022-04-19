@@ -1,33 +1,60 @@
-// dpram_inf_256x32.v
-// 2015, rok.krajnc@gmail.com
-// inferrable dual-port memory
+// True-Dual-Port BRAM with Byte-wide Write Enable
+// Read-First mode
+// bytewrite_tdp_ram_rf.v
+//
 
-module dpram_inf_generic #(parameter depth = 8, parameter width = 32 ) (
-  input  wire           clock,
-  input  wire           wren_a,
-  input  wire [  depth-1:0] address_a,
-  input  wire [ width-1:0] data_a,
-  output reg  [ width-1:0] q_a,
-  input  wire           wren_b,
-  input  wire [  depth-1:0] address_b,
-  input  wire [ width-1:0] data_b,
-  output reg  [ width-1:0] q_b
+module bytewrite_tdp_ram_rf #(
+  //--------------------------------------------------------------------------
+  parameter NUM_COL = 4,
+  parameter COL_WIDTH = 8,
+  parameter ADDR_WIDTH = 8,
+  // Addr Width in bits : 2 *ADDR_WIDTH = RAM Depth
+  parameter DATA_WIDTH = NUM_COL*COL_WIDTH // Data Width in bits
+  //----------------------------------------------------------------------
+) (
+  input                       clkA,
+  input                       enaA,
+  input      [NUM_COL-1:0]    weA,
+  input      [ADDR_WIDTH-1:0] addrA,
+  input      [DATA_WIDTH-1:0] dinA,
+  output reg [DATA_WIDTH-1:0] doutA,
+  input                       clkB,
+  input                       enaB,
+  input      [NUM_COL-1:0]    weB,
+  input      [ADDR_WIDTH-1:0] addrB,
+  input      [DATA_WIDTH-1:0] dinB,
+  output reg [DATA_WIDTH-1:0] doutB
 );
 
-// memory
-reg [width-1:0] mem [0:(1<<depth)-1];
+ // Core Memory
+ reg [DATA_WIDTH-1:0] ram_block [(2**ADDR_WIDTH)-1:0];
+ integer i;
 
-// port a
-always @ (posedge clock) begin
-  if (wren_a) mem[address_a] <= #1 data_a;
-  q_a <= #1 mem[address_a];
-end
+ // Port-A Operation
+ always @ (posedge clkA) begin
+   if(enaA) begin
+     for(i=0;i<NUM_COL;i=i+1) begin
+       if(weA[i]) begin
+         ram_block[addrA][i*COL_WIDTH +: COL_WIDTH] <= dinA[i*COL_WIDTH +:
+           COL_WIDTH];
+       end
+     end
+     doutA <= ram_block[addrA];
+   end
+ end
 
-// port b
-always @ (posedge clock) begin
-  if (wren_b) mem[address_b] <= #1 data_b;
-  q_b <= #1 mem[address_b];
-end
+ // Port-B Operation:
+ always @ (posedge clkB) begin
+   if(enaB) begin
+     for(i=0;i<NUM_COL;i=i+1) begin
+       if(weB[i]) begin
+         ram_block[addrB][i*COL_WIDTH +: COL_WIDTH] <= dinB[i*COL_WIDTH +:
+           COL_WIDTH];
+       end
+     end
 
-endmodule
+     doutB <= ram_block[addrB];
+   end
+ end
 
+endmodule // bytewrite_tdp_ram_rf

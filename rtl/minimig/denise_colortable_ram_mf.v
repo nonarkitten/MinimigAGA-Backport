@@ -68,6 +68,8 @@ module denise_colortable_ram_mf (
 	wire [31:0] sub_wire0;
 	wire [31:0] q = sub_wire0[31:0];
 
+`ifdef MINIMIG_ALTERA
+
 	altsyncram	altsyncram_component (
 				.address_a (wraddress),
 				.byteena_a (byteena_a),
@@ -113,6 +115,31 @@ module denise_colortable_ram_mf (
 		altsyncram_component.width_a = 32,
 		altsyncram_component.width_b = 32,
 		altsyncram_component.width_byteena_a = 4;
+`endif
+
+`ifndef MINIMIG_ALTERA         
+// Dual port RAM.          
+wire [3:0] byte_wr_ena;
+assign byte_wr_ena = wren ? byteena_a : 4'b0000;
+bytewrite_tdp_ram_rf #(
+	.NUM_COL(4),
+	.COL_WIDTH(8),
+	.ADDR_WIDTH(8)
+) colortable_ram(
+     .clkA(clock),           
+     .clkB(clock),           
+     .addrA(wraddress), // Address bus
+     .addrB(rdaddress),           
+     .dinA(data),  // data in                          
+     .dinB({32{1'b1}}),                                
+     .doutA(),     // data out                             
+     .doutB(sub_wire0),                                    
+     .weA(byte_wr_ena), // Write enable                      
+     .weB(4'b0000),                                      
+	 .enaA(enable),
+	 .enaB(1'b1)
+);                                                      
+`endif
 
 
 endmodule

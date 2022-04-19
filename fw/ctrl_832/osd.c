@@ -40,6 +40,7 @@ This is the Minimig OSD (on-screen-display) handler.
 
 #include "charrom.h"
 #include "logo.h"
+#include "audio.h"
 
 #include "string.h"
 
@@ -84,7 +85,7 @@ const char *supporters[]=
 	"facebook group for their",
 	"enthusiasm and suggestions.",
 	0
-}
+};
 
 // conversion table of Amiga keyboard scan codes to ASCII codes
 const char keycode_table[128] =
@@ -196,7 +197,7 @@ void OsdWriteFramebuffer(unsigned char n, char *s)
 	{
 		i=(linelimit-i)/2;
 		fb+=i;
-		while(b = *s++)
+		while((b = *s++))
 		{
 	        p = &charfont[b][0];
 			*fb++|=*p++;
@@ -856,6 +857,23 @@ void ConfigVideo(unsigned char hires, unsigned char lores, unsigned char scanlin
     SPI(OSD_CMD_VID);
     SPI(((hires & 0x03) << 4) | ((lores & 0x03)<<2) | (scanlines & 0x03));
     DisableOsd();
+}
+
+void ConfigVideoPos(unsigned char hpos, unsigned char vpos)
+{
+	EnableOsd();
+	VIDEOSCALE_SET_POS = (hpos + ((unsigned short)vpos << 8));
+	//VIDEOSCALE_SET_POS = 0x3280;
+	//*((volatile unsigned int *)0x0fffff50) = 0x3281;
+
+	DisableOsd();
+}
+
+void ConfigAudio(unsigned char volume)
+{
+  EnableOsd();
+  audio_volume(volume);
+  DisableOsd();
 }
 
 void ConfigMemory(unsigned char memory)

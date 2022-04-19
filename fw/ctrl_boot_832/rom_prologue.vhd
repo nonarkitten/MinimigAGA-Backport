@@ -6,6 +6,8 @@ entity soc_firmware is
 generic
 	(
 		maxAddrBitBRAM : integer := 15 -- Specify your actual ROM size to save LEs and unnecessary block RAM usage.
+        COL_WIDTH  : integer := 8;  -- Column width (8bit -> byte)
+        NB_COL     : integer := 4  -- Number of columns in memory
 	);
 port (
 	clk : in std_logic;
@@ -27,8 +29,11 @@ end soc_firmware;
 
 architecture arch of soc_firmware is
 
-type word_t is array (0 to 3) of std_logic_vector(7 downto 0);
-type ram_type is array (0 to 2 ** (maxAddrBitBRAM-1) - 1) of word_t;
+-- type word_t is std_logic_vector(31 downto 0);
+type ram_type is array (0 to 2 ** (maxAddrBitBRAM-1) - 1) of std_logic_vector(NB_COL * COL_WIDTH - 1 downto 0);
+
+   -- type rom_type is array (0 to 2**ADDR_WIDTH-1)
+   --     of std_logic_vector(DATA_WIDTH-1 downto 0);
 
 signal ram : ram_type :=
 (

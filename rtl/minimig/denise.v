@@ -184,6 +184,22 @@ always @(posedge clk) begin
   end
 end
 
+// BPLCON3 register
+reg  [16-1:0] bplcon3;    // bplcon3 register
+wire [ 3-1:0] bank;       // color bank select
+wire [ 3-1:0] pf2of;      // bitplane color table offset when playfield 2 has priority in dpf mode
+wire [ 2-1:0] spres;      // sprite resolution select
+wire          brdrblnk;   // border blank enable; disabled when ECSENA is low
+wire          brdntran;   // border area is non-transparent; disabled when ECSENA is low
+wire          zdclken;    // zd pin ??
+wire          brdsprt;    // enable srpites outside the display window; disabled when ECSENA is low
+wire          extblken;   // causes blank output to be programmable; disabled when ECSENA is low
+wire          loct;       // 12-bit color palette select
+
+// instantiate colour look up table
+wire  [24-1:0] clut_rgb;    // colour table rgb data out
+wire           ehb_en;      // ehb enable
+
 assign rdram = bplcon2[8] & aga;
 assign rgb_out = (reg_address_in[8:6] == COLORBASE[8:6]) && rdram
                    ? {4'b0000, loct ? {clut_rgb[19:16], clut_rgb[11:8], clut_rgb[3:0]}
@@ -191,17 +207,6 @@ assign rgb_out = (reg_address_in[8:6] == COLORBASE[8:6]) && rdram
                    : 16'h0000;
 assign killehb = bplcon2[9] & ecs;
 
-// BPLCON3 register
-reg  [16-1:0] bplcon3;    // bplcon3 register
-wire [ 3-1:0] bank;       // color bank select
-wire [ 3-1:0] pf2of;      // bitplane color table offset when playfield 2 has priority in dpf mode
-wire          loct;       // 12-bit color palette select
-wire [ 2-1:0] spres;      // sprite resolution select
-wire          brdrblnk;   // border blank enable; disabled when ECSENA is low
-wire          brdntran;   // border area is non-transparent; disabled when ECSENA is low
-wire          zdclken;    // zd pin ??
-wire          brdsprt;    // enable srpites outside the display window; disabled when ECSENA is low
-wire          extblken;   // causes blank output to be programmable; disabled when ECSENA is low
 
 always @(posedge clk) begin
   if (clk7_en) begin
@@ -381,10 +386,6 @@ denise_spritepriority spm0
   .nsprite(nsprite),
   .sprsel(sprsel)
 );
-
-// instantiate colour look up table
-wire  [24-1:0] clut_rgb;    // colour table rgb data out
-wire           ehb_en;      // ehb enable
 
 assign ehb_en = !killehb && !a1k && !ham && !dpf && (l_bpu == 4'd6);
 

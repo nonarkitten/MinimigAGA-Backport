@@ -236,8 +236,8 @@ __geta4 int main(void)
     while(1)
     {
 		drivesounds_fill();
-		if(c64keyboard_checkreset())
-			OsdDoReset(SPI_RST_USR | SPI_RST_CPU,0);
+		//if(c64keyboard_checkreset())
+		//	OsdDoReset(SPI_RST_USR | SPI_RST_CPU,0);
 
 		if(rtc)
 			HandleRTC();

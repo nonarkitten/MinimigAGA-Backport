@@ -32,13 +32,19 @@ module sdram_ctrl(
   input  wire [  4-1:0] cpu_cache_ctrl,
   output wire           reset_out,
   // sdram
+  (* IOB="FORCE" *)
   output reg  [ 13-1:0] sdaddr,
   output wire [  4-1:0] sd_cs,
+  (* IOB="FORCE" *)
   output reg  [  2-1:0] ba,
   output wire           sd_we,
+  (* IOB="FORCE" *)
   output wire           sd_ras,
+  (* IOB="FORCE" *)
   output wire           sd_cas,
+  (* IOB="FORCE" *)
   output reg  [  2-1:0] dqm,
+  (* IOB="FORCE" *)
   inout       [ 16-1:0] sdata,
   // host
   input  wire [ 32-1:0] hostWR,
@@ -143,13 +149,14 @@ reg           init_done;
 reg  [26-1:0] slot1_addr;
 reg  [26-1:0] slot2_addr;
 reg  [16-1:0] sdata_reg;
+(* IOB="FORCE" *)
 reg  [16-1:0] sdata_out;
 reg           sdata_oe;
 wire          ccache_fill;
 wire          ccachehit;
 wire          cpuLongword;
 wire          cpuCSn;
-reg  [ 8-1:0] hostslot_cnt;
+//reg  [ 8-1:0] hostslot_cnt;
 reg  [ 8-1:0] reset_cnt;
 reg           reset;
 reg           reset_sdstate;
@@ -206,23 +213,23 @@ assign cpuCSn      = cpustate[2];
 ////////////////////////////////////////
 
 always @(posedge sysclk) begin
-	if(!reset_in) begin
-		reset_cnt       <= #1 8'b00000000;
-		reset           <= #1 1'b0;
-		reset_sdstate   <= #1 1'b0;
-	end else begin
-		if(reset_cnt == 8'b00101010) begin
-			reset_sdstate <= #1 1'b1;
-		end
-		if(reset_cnt == 8'b10101010) begin
-			if(sdram_state == ph15) begin
-				reset       <= #1 1'b1;
-			end
-		end else begin
-			reset_cnt     <= #1 reset_cnt + 8'd1;
-			reset         <= #1 1'b0;
-		end
-	end
+    if(!reset_in) begin
+        reset_cnt       <= #1 8'b00000000;
+        reset           <= #1 1'b0;
+        reset_sdstate   <= #1 1'b0;
+    end else begin
+        if(reset_cnt == 8'b00101010) begin
+            reset_sdstate <= #1 1'b1;
+        end
+        if(reset_cnt == 8'b10101010) begin
+            if(sdram_state == ph15) begin
+                reset       <= #1 1'b1;
+            end
+        end else begin
+            reset_cnt     <= #1 reset_cnt + 8'd1;
+            reset         <= #1 1'b0;
+        end
+    end
 end
 
 assign reset_out = init_done;
@@ -290,15 +297,15 @@ assign readcache_fill = (cache_fill_1 && slot1_type == CPU_READCACHE) || (cache_
 
 //// chip line read ////
 always @ (posedge sysclk) begin
-	if(slot1_type == CHIP) begin
-		case(sdram_state)
-			ph9  : chipRD   <= #1 sdata_reg;
-			ph10 : chip48_1 <= #1 sdata_reg;
-			ph11 : chip48_2 <= #1 sdata_reg;
-			ph12 : chip48_3 <= #1 sdata_reg;
-			default: ;
-		endcase
-	end
+    if(slot1_type == CHIP) begin
+        case(sdram_state)
+            ph9  : chipRD   <= #1 sdata_reg;
+            ph10 : chip48_1 <= #1 sdata_reg;
+            ph11 : chip48_2 <= #1 sdata_reg;
+            ph12 : chip48_3 <= #1 sdata_reg;
+            default: ;
+        endcase
+    end
 end
 
 assign chip48 = {chip48_1, chip48_2, chip48_3};
@@ -316,86 +323,86 @@ end
 
 //// read data reg ////
 always @ (posedge sysclk) begin
-	sdata_reg <= #1 sdata;
+    sdata_reg <= #1 sdata;
 end
 
 //// write / read control ////
 always @ (posedge sysclk) begin
-	if(!reset_sdstate) begin
-		enaWRreg      <= #1 1'b0;
-		ena7RDreg     <= #1 1'b0;
-		ena7WRreg     <= #1 1'b0;
-	end else begin
-		enaWRreg      <= #1 1'b0;
-		ena7RDreg     <= #1 1'b0;
-		ena7WRreg     <= #1 1'b0;
-		case(sdram_state) // LATENCY=3
-			ph2 : begin
-				enaWRreg  <= #1 1'b1;
-			end
-			ph6 : begin
-				enaWRreg  <= #1 1'b1;
-				ena7RDreg <= #1 1'b1;
-			end
-			ph10 : begin
-				enaWRreg  <= #1 1'b1;
-			end
-			ph14 : begin
-				enaWRreg  <= #1 1'b1;
-				ena7WRreg <= #1 1'b1;
-			end
-			default : begin
-			end
-		endcase
-	end
+    if(!reset_sdstate) begin
+        enaWRreg      <= #1 1'b0;
+        ena7RDreg     <= #1 1'b0;
+        ena7WRreg     <= #1 1'b0;
+    end else begin
+        enaWRreg      <= #1 1'b0;
+        ena7RDreg     <= #1 1'b0;
+        ena7WRreg     <= #1 1'b0;
+        case(sdram_state) // LATENCY=3
+            ph2 : begin
+                enaWRreg  <= #1 1'b1;
+            end
+            ph6 : begin
+                enaWRreg  <= #1 1'b1;
+                ena7RDreg <= #1 1'b1;
+            end
+            ph10 : begin
+                enaWRreg  <= #1 1'b1;
+            end
+            ph14 : begin
+                enaWRreg  <= #1 1'b1;
+                ena7WRreg <= #1 1'b1;
+            end
+            default : begin
+            end
+        endcase
+    end
 end
 
 
 //// init counter ////
 always @ (posedge sysclk) begin
-	if(!reset) begin
-		initstate <= #1 {4{1'b0}};
-		init_done <= #1 1'b0;
-	end else begin
-		case(sdram_state) // LATENCY=3
-		ph15 : begin
-			if(initstate != 4'b 1111) begin
-				initstate <= #1 initstate + 4'd1;
-			end else begin
-				init_done <= #1 1'b1;
-			end
-		end
-		default : begin
-		end
-		endcase
-	end
+    if(!reset) begin
+        initstate <= #1 {4{1'b0}};
+        init_done <= #1 1'b0;
+    end else begin
+        case(sdram_state) // LATENCY=3
+        ph15 : begin
+            if(initstate != 4'b 1111) begin
+                initstate <= #1 initstate + 4'd1;
+            end else begin
+                init_done <= #1 1'b1;
+            end
+        end
+        default : begin
+        end
+        endcase
+    end
 end
 
 
 //// sdram state ////
 always @ (posedge sysclk) begin
-	if(clk7_enD & ~clk7_en) begin
-		sdram_state   <= #1 ph1;
-	end else begin
-	case(sdram_state) // LATENCY=3
-		ph0     : sdram_state <= #1 ph1;
-		ph1     : sdram_state <= #1 ph2;
-		ph2     : sdram_state <= #1 ph3;
-		ph3     : sdram_state <= #1 ph4;
-		ph4     : sdram_state <= #1 ph5;
-		ph5     : sdram_state <= #1 ph6;
-		ph6     : sdram_state <= #1 ph7;
-		ph7     : sdram_state <= #1 ph8;
-		ph8     : sdram_state <= #1 ph9;
-		ph9     : sdram_state <= #1 ph10;
-		ph10    : sdram_state <= #1 ph11;
-		ph11    : sdram_state <= #1 ph12;
-		ph12    : sdram_state <= #1 ph13;
-		ph13    : sdram_state <= #1 ph14;
-		ph14    : sdram_state <= #1 ph15;
-		default : sdram_state <= #1 ph0;
-	endcase
-	end
+    if(clk7_enD & ~clk7_en) begin
+        sdram_state   <= #1 ph1;
+    end else begin
+    case(sdram_state) // LATENCY=3
+        ph0     : sdram_state <= #1 ph1;
+        ph1     : sdram_state <= #1 ph2;
+        ph2     : sdram_state <= #1 ph3;
+        ph3     : sdram_state <= #1 ph4;
+        ph4     : sdram_state <= #1 ph5;
+        ph5     : sdram_state <= #1 ph6;
+        ph6     : sdram_state <= #1 ph7;
+        ph7     : sdram_state <= #1 ph8;
+        ph8     : sdram_state <= #1 ph9;
+        ph9     : sdram_state <= #1 ph10;
+        ph10    : sdram_state <= #1 ph11;
+        ph11    : sdram_state <= #1 ph12;
+        ph12    : sdram_state <= #1 ph13;
+        ph13    : sdram_state <= #1 ph14;
+        ph14    : sdram_state <= #1 ph15;
+        default : sdram_state <= #1 ph0;
+    endcase
+    end
 end
 
 reg zatn;
@@ -766,7 +773,7 @@ end
 // The read burst size is 8-words, write burst is single. Writing the 2nd word is
 // done by issuing a second write command.
 
-//	      Slot 1 read         Slot 1 write           Slot 2 read         Slot 2 write
+//        Slot 1 read         Slot 1 write           Slot 2 read         Slot 2 write
 //
 // ph0  read7                                                          CAS (1st word)
 // ph1  Slot alloc, RAS (both R & W)                read0

@@ -53,21 +53,18 @@ module minimig_virtual_top	#(
   output wire           LED_DISK,   // LED red
   
   // UART
-  output wire           CTRL_TX,    // UART Transmitter
-  input wire            CTRL_RX,    // UART Receiver
-  output wire           AMIGA_TX,    // UART Transmitter
-  input wire            AMIGA_RX,    // UART Receiver
-  
-  // VGA
-  output wire				VGA_PIXEL,  // high pulse for each new pixel
-  output wire           VGA_SELCS,  // Select CSYNC
-  output wire           VGA_CS,     // VGA C_SYNC
-  output wire           VGA_HS,     // VGA H_SYNC
-  output wire           VGA_VS,     // VGA V_SYNC
-  output wire [  8-1:0] VGA_R,      // VGA Red[5:0]
-  output wire [  8-1:0] VGA_G,      // VGA Green[5:0]
-  output wire [  8-1:0] VGA_B,      // VGA Blue[5:0]
-  
+  wire minimig_rxd;
+  wire minimig_txd;
+  wire debug_rxd;
+  wire debug_txd;
+
+  // Realtime clock
+  wire [63:0] rtc;
+
+  ////////////////////////////////////////
+  // toplevel assignments               //
+  ////////////////////////////////////////
+
   // SDRAM
   inout  wire [ 16-1:0] SDRAM_DQ,   // SDRAM Data bus 16 Bits
   output wire [ 13-1:0] SDRAM_A,    // SDRAM Address bus 13 Bits
@@ -518,8 +515,8 @@ wire [15:0] amigahost_q;
 
 //// TG68K main CPU ////
 `ifdef HOSTONLY
-assign tg68_cpustate=2'b01;
-assign tg68_nrst_out=1'b1;
+  assign tg68_cpustate=2'b01;
+  assign tg68_nrst_out=1'b1;
 `else
 
 TG68K #(.havertg(havertg ? "true" : "false"),
@@ -730,9 +727,9 @@ end
 
 //// minimig top ////
 `ifdef HOSTONLY
-assign SPI_DO=1'b1;
-assign _ram_oe=1'b1;
-assign _ram_we=1'b1;
+  assign SPI_DO=1'b1;
+  assign _ram_oe=1'b1;
+  assign _ram_we=1'b1;
 `else
 
 minimig minimig

@@ -14,6 +14,7 @@
 //#define FPGA2 AT91C_PIO_PA15
 //#define BUTTON AT91C_PIO_PA28
 
+#include "i2c.h"
 #include "spi.h"
 #include "uart.h"
 
@@ -96,6 +97,9 @@
 #define SPI_RST_CPU         0x2
 #define SPI_CPU_HLT         0x4
 
+// 15kHz to HDMI Video position
+#define VIDEOSCALE (*(volatile unsigned int *)0x0fffff50)
+#define VIDEOSCALE_SET_POS (VIDEOSCALE)
 
 //void USART_Init(unsigned long baudrate);
 //void USART_Write(unsigned char c);

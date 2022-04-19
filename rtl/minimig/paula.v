@@ -28,7 +28,7 @@
 // 23-10-2005	-added dmal signal
 //				-added paula part of DMACON
 // 21-11-2005	-added floppy controller
-// 				-added ADKCON/ADCONR registers
+//				-added ADKCON/ADCONR registers
 //				-added local horbeam counter
 // 27-11-2005	-den is now active low (_den)
 //				-some typo's fixed
@@ -62,14 +62,14 @@ module paula
   input clk,         // 28 MHz system clock
   input clk7_en,
   input clk7n_en,
-	input 	cck,		    		//colour clock enable
-	input 	reset,			   		//reset 
-	input 	[8:1] reg_address_in,	//register address inputs
+	input		cck,						//colour clock enable
+	input		reset,						//reset 
+	input		[8:1] reg_address_in,	//register address inputs
 	input	[15:0] data_in,			//bus data in
 	output	[15:0] data_out,		//bus data out
 	//serial (uart) 
-	output 	txd,					//serial port transmitted data
-	input 	rxd,			  		//serial port received data
+	output	txd,					//serial port transmitted data
+	input		rxd,						//serial port received data
 	//interrupts and dma
   input ntsc,         // PAL/NTSC mode
   input sof,          // start of vertical frame
@@ -86,7 +86,7 @@ module paula
 	//disk control signals from cia and user
 	input	_step,					//step heads of disk
 	input	direc,					//step heads direction
-	input	[3:0] _sel,				//disk select 	
+	input	[3:0] _sel,				//disk select		
 	input	side,					//upper/lower disk head
 	input	_motor,					//disk motor control
 	output	_track0,				//track zero detect
@@ -104,7 +104,7 @@ module paula
 	output	left,					//audio bitstream left
 	output	right,					//audio bitstream right
 	output	[15:0]ldata,			//left DAC data
-	output	[15:0]rdata, 			//right DAC data
+	output	[15:0]rdata,			//right DAC data
   // system configuration
 	input	[1:0] floppy_drives,	//number of extra floppy drives
   // direct sector read from SD card
@@ -138,19 +138,19 @@ parameter ADKCONR = 9'h010;
 reg		[4:0] dmacon;			//dmacon paula bits 
 reg		dmaen;					//master dma enable
 reg		[14:0] adkcon;			//audio and disk control register
-wire	[15:0] uartdata_out; 	//UART data out
-wire	[15:0] intdata_out;  	//interrupt controller data out
+wire	[15:0] uartdata_out;	//UART data out
+wire	[15:0] intdata_out;		//interrupt controller data out
 wire	[15:0] diskdata_out;		//disk controller data out
 wire	[15:0] adkconr;			//ADKCONR register data out
-wire	rbfmirror; 				//rbf mirror (from uart to interrupt controller)
-wire	rxint;  				//uart rx interrupt request
+wire	rbfmirror;				//rbf mirror (from uart to interrupt controller)
+wire	rxint;					//uart rx interrupt request
 wire	txint;					//uart tx interrupt request
 wire	blckint;				//disk block finished interrupt
 wire	syncint;				//disk syncword match interrupt
 wire	[3:0] audint;			//audio channels 0,1,2,3 interrupt request
 wire	[3:0] audpen;			//audio channels 0,1,2,3 interrupt pending
 wire	[3:0] auden;			//audio channels 0,1,2,3 dma enable
-wire	dsken; 					//disk dma enable
+wire	dsken;					//disk dma enable
 
 
 //--------------------------------------------------------------------------------------
@@ -166,15 +166,15 @@ assign data_out = uartdata_out | intdata_out | diskdata_out | adkconr;
 //there DMACONR (read) is implemented
 always @(posedge clk) begin
   if (clk7_en) begin
-  	if (reset) begin
+		if (reset) begin
       dmaen <= 0;
-  		dmacon <= 5'd0;
-  	end else if (reg_address_in[8:1]==DMACON[8:1]) begin
-  		if (data_in[15])
-  			{dmaen,dmacon[4:0]} <= {dmaen,dmacon[4:0]} | {data_in[9],data_in[4:0]};
-  		else
-  			{dmaen,dmacon[4:0]} <= {dmaen,dmacon[4:0]} & (~{data_in[9],data_in[4:0]});	
-  	end
+			dmacon <= 5'd0;
+		end else if (reg_address_in[8:1]==DMACON[8:1]) begin
+			if (data_in[15])
+				{dmaen,dmacon[4:0]} <= {dmaen,dmacon[4:0]} | {data_in[9],data_in[4:0]};
+			else
+				{dmaen,dmacon[4:0]} <= {dmaen,dmacon[4:0]} & (~{data_in[9],data_in[4:0]});	
+		end
   end
 end
 
@@ -190,15 +190,15 @@ assign	auden[0] = dmacon[0] & dmaen;
 //ADKCON register write
 always @(posedge clk) begin
   if (clk7_en) begin
-  	if (reset)
-  		adkcon <= 15'd0;
-  	else if (reg_address_in[8:1]==ADKCON[8:1])
-  	begin
-  		if (data_in[15])
-  			adkcon[14:0] <= adkcon[14:0] | data_in[14:0];
-  		else
-  			adkcon[14:0] <= adkcon[14:0] & (~data_in[14:0]);	
-  	end
+		if (reset)
+			adkcon <= 15'd0;
+		else if (reg_address_in[8:1]==ADKCON[8:1])
+		begin
+			if (data_in[15])
+				adkcon[14:0] <= adkcon[14:0] | data_in[14:0];
+			else
+				adkcon[14:0] <= adkcon[14:0] & (~data_in[14:0]);	
+		end
   end
 end
 

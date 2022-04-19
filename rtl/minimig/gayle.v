@@ -111,15 +111,15 @@ wire 	sel_tfr;		// HDD task file registers select
 wire 	sel_fifo;		// HDD data port select (FIFO buffer)
 wire 	sel_status;		// HDD status register select
 wire 	sel_command;	// HDD command register select
-wire  sel_cs;         // Gayle IDE CS
+wire  sel_cs;			// Gayle IDE CS
 wire 	sel_intreq;		// Gayle interrupt request status register select
 wire 	sel_intena;		// Gayle interrupt enable register select
-wire  sel_cfg;      // Gayle CFG
+wire  sel_cfg;			// Gayle CFG
 
 // internal registers
 reg		intena;			// Gayle IDE interrupt enable bit
 reg		intreq;			// Gayle IDE interrupt request bit
-reg		block_mark;	// Gayle IDE multiple block start flag
+reg		block_mark;		// Gayle IDE multiple block start flag
 reg		busy;			// busy status (command processing state)
 reg		pio_in;			// pio in command type is being processed
 reg		pio_out;		// pio out command type is being processed
@@ -132,7 +132,7 @@ reg   [1:0] dev;		// drive select (Primary/Secondary, Master/Slave)
 wire 	bsy;			// busy
 wire 	drdy;			// drive ready
 wire 	drq;			// data request
-reg  	drq_d;		// data request
+reg  	drq_d;			// data request
 wire 	err;			// error
 wire 	[7:0] status;	// HDD status
 

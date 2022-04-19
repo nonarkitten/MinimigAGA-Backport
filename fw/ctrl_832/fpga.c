@@ -122,10 +122,10 @@ void SendFileV2(RAFile* file, unsigned char* key, int keysize, int address, int 
 	printf("]\r");
 
 	if (kickfoundstr) {
-		printf(kickfoundstr);
+		printf("%s", kickfoundstr);
 	}
 	if (applypatchstr) {
-		printf(applypatchstr);
+		printf("%s", applypatchstr);
 	}
 }
 
@@ -228,6 +228,7 @@ void fpga_init() {
 	BootPrintEx("Updates by Jakub Bednarski, Tobias Gubener, Sascha Boing, A.M. Robinson & others");
 	BootPrintEx(" ");
 	BootPrintEx("Ported to Turbo Chameleon 64 by Alastair M. Robinson");
+	BootPrintEx("Ported to Open AARS by Paul Honig");
 	BootPrintEx(" ");
 	WaitTimer(1000);
     
