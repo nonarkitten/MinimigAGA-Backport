@@ -1,7 +1,6 @@
-# Minimig AGA
+# Minimig AGA (Backport)
 
-For Turbo Chameleon TC64, MiST and other platforms.
-(This core should be easily portable to any FPGA board with VGA out, PS/2 in, SD-card, about 25,000 logic elements, and a 16-bit wide SDRAM supporting 13x9 layout for 32 megabytes of RAM.)
+This is a stripping and backport of the current Minimig AGA firmware to the original Minimig. To fit within the 400K gate Spartan 3, many "bonus" features will need to be removed.
 
 ### Foreword
 
@@ -11,21 +10,27 @@ For Turbo Chameleon TC64, MiST and other platforms.
 
 This minimig variant has been upgraded with [AGA chipset](http://en.wikipedia.org/wiki/Amiga_Advanced_Graphics_Architecture) capabilites, which allows it to emulate the latest Amiga models ([Amiga 1200](http://en.wikipedia.org/wiki/Amiga_1200), [Amiga 4000](http://en.wikipedia.org/wiki/Amiga_4000) and (partially) [Amiga CD32](http://en.wikipedia.org/wiki/Amiga_CD32)). Ofcourse it also supports previous OCS/ECS Amigas like [Amiga 500](http://en.wikipedia.org/wiki/Amiga_500), [Amiga 600](http://en.wikipedia.org/wiki/Amiga_600) etc.
 
+### Backport Limitations
+
+- Minimig only has 12-bit RGB output; the low bits can bit modulated to provide more effective colour depth (may need a cap mod to look good)
+- Minimig only has a 16-bit CPU bus; the host CPU will need to run at 28MHz to ensure the equivalent access speeds
+- Minimig only has a 16-bit RAM bus; this was already overclocked from the Amiga bus, need to ensure FMODEs (1x, 2x and 4x) can work
+- Minimig only has 4MB of SRAM; this only needs to handle ROM, chip and ranger RAM; CPU local memory can live in the accelerator
+- Minimig uses a real 68SEC000; however, new models use a DIP64 socket to support accelerators; Turbo now only changes the FSB from 7MHz to 28MHz; the 68SEC000 can run fine at 28MHz but most accelerators can only run at 7MHz
+- Minimig only has 400K gates which is very small; getting AGA to fit will be hard(tm)
+
 ## Core features supported
 
 * chipset variants : OCS, ECS, AGA
-* chipRAM : 0.5MB - 2.0MB
-* slowRAM : 0.0MB - 1.5MB
-* fastRAM : 0.0MB - 24MB
-* CPU core : 68000, 68010, 68020
+* chip RAM : 0.5MB - 2.0MB
+* ranger RAM : 0.0MB - 1.5MB
 * kickstart : 1.2 - 3.2 (256kB, 512kB & 1MB kickstart ROMs currently supported)
 * HRTmon with custom registers mirror
 * floppy disks : 1-4 floppies (supports ADF floppy image format), with normal & turbo speeds
 * hard disks : 1-2 hard disk images (supports whole disk images, partition images, using whole SD card and using SD card partition)
 * video standard : PAL / NTSC
-* supports normal & scandoubled video output (15kHz / 30kHz) - can be used with a monitor or a TV with a SCART cable
-* peripherals : real Amiga / C64 joysticks connected to C64 joystick ports, CDTV infra-red controllers, PS/2 keyboards,
-PS/2 mice, Turbo Chameleon Docking Station for extra joysticks or real Amiga mouse, and MIDI in / out
+* supports normal & scandoubled video output (15kHz / 31kHz) - can be used with a monitor or a TV with a SCART cable
+* peripherals : real Amiga / C64 joysticks or mouse connected to DB9 joystick ports, PS/2 keyboards, VGA and audio output, DB9 serial port
 * supports basic [retargetable graphics](https://en.wikipedia.org/wiki/Retargetable_graphics) with a P96 driver
 * has an implementation of the [Akiko](https://en.wikipedia.org/wiki/Amiga_custom_chips#Akiko) chunky to planar converter
 * has an extra audio channel which can be used from the Amiga to play CD-quality WAV files, or used on some platforms to emulate floppy drive sounds.
@@ -33,7 +38,8 @@ PS/2 mice, Turbo Chameleon Docking Station for extra joysticks or real Amiga mou
 ## Usage
 
 ### Hardware
-To use this minimig core, you will at the minimum need an SD/SDHC card, formatted with the FAT32 filesystem, a PS/2 keyboard and a compatible monitor / TV. Joysticks & mouse can be emulated on the keyboard. You will probably want to attach a set of speakers or headphones, a real Amiga or USB mouse and a real Amiga joystick.
+
+To use this minimig core, you will at the minimum need a new MiniMig board, an SD/SDHC card formatted with the FAT32 filesystem, a PS/2 keyboard and a compatible monitor. Joysticks & mouse can be emulated on the keyboard. You will probably want to attach a set of speakers or headphones, a real Amiga mouse or joystick. USB devices using adapters work fine.
 
 ### Software
 
@@ -43,18 +49,12 @@ The minimig can read any ADF floppy images you place on the SD card. I recommend
 
 The minimig can also use HDF harddisk images, which can be created with [WinUAE](http://www.winuae.net/).
 
-### Recommended minimig config
-
-- for ECS games / demos : CPU = 68000, Turbo=NONE, Chipset=ECS, chipRAM=0.5MB, slowRAM=0.5MB, Kickstart 1.3
-- for AGA games / demos : CPU = 68020, Turbo=NONE, Chipset=AGA, chipRAM=2MB, slowRAM=0MB, fastRAM=24MB, Kickstart 3.1
-  For Workbench usage, you can try turning TURBO=BOTH for a little speed increase.
-
 ### Controlling minimig
 
 Keyboard special keys:
 
-- F12 - OSD menu
-- F11 - start monitor (HRTmon) if HRTmon is enabled in OSD menu (otherwise F11 is the Amiga HELP key)
+- F12 - OSD menu - use cursor keys to navigate, Enter to cycle options and Escape to back out
+- F11 - INT7 key - start monitor (HRTmon) if HRTmon is enabled in OSD menu (otherwise F11 is the Amiga HELP key)
 - ScrollLock - toggle keyoard only / mouse / joystick 1 / joystick 2 emulation on the keyboard (direction keys + LCTRL)
 
 ### RTG settings
